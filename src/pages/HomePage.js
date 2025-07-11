@@ -43,6 +43,10 @@ function HomePage() {
               <h2>Get Metadata Differences</h2>
               <p>Get all differences between Dev and Prod Metadata</p>
             </Link>
+            <Link to="/database-page" className="service-card">
+              <h2>Database Page</h2>
+              <p>Select and update rows in a metadata table</p>
+            </Link>
           </div>
         </div>
       </div>
