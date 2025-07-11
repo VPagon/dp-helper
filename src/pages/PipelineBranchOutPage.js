@@ -6,6 +6,7 @@ import HomeButton from 'components/common/HomeButtom';
 
 function PipelineBranchOutPage() {
   const [pipelineName, setPipelineName] = useState('');
+  const [environment, setEnvironment] = useState('dev');
   const [dependencies, setDependencies] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,7 +31,7 @@ function PipelineBranchOutPage() {
     try {
       // Find the base pipeline
       const pipelineResult = await executeQuery(
-        'prod',
+        environment,
         `SELECT pipeline_id, pipeline_name, cast(enabled as varchar) as enabled 
          FROM rep_mda.mda_ocn_pipelines 
          WHERE pipeline_name = '${pipelineName}'`
@@ -54,7 +55,7 @@ function PipelineBranchOutPage() {
       // Fetch upstream and downstream dependencies
       const [upstreamResult, downstreamResult] = await Promise.all([
         executeQuery(
-          'prod',
+          environment,
           `WITH UpstreamCTE AS (
             SELECT p.pipeline_id, p.pipeline_name, cast(p.enabled as varchar) as enabled, 1 AS level
             FROM rep_mda.mda_ocn_pipelines p
@@ -72,7 +73,7 @@ function PipelineBranchOutPage() {
           SELECT * FROM UpstreamCTE ORDER BY level`
         ),
         executeQuery(
-          'prod',
+          environment,
           `WITH DownstreamCTE AS (
             SELECT p.pipeline_id, p.pipeline_name, cast(p.enabled as varchar) as enabled, 1 AS level
             FROM rep_mda.mda_ocn_pipelines p
@@ -106,7 +107,7 @@ function PipelineBranchOutPage() {
   const fetchPipelineLogs = async (pipelineName) => {
   try {
     const result = await executeQuery(
-      'prod',
+      environment,
       `SELECT TOP 5 
           log_id,
           pipeline_id,
@@ -209,6 +210,29 @@ function PipelineBranchOutPage() {
             onChange={(e) => setPipelineName(e.target.value)}
             placeholder="Enter exact pipeline name"
           />
+        </div>
+        <div className="form-group">
+          <label>Environment:</label>
+          <div className="radio-group">
+            <label>
+              <input
+                type="radio"
+                value="dev"
+                checked={environment === 'dev'}
+                onChange={() => setEnvironment('dev')}
+              />
+              dev
+            </label>
+            <label>
+              <input
+                type="radio"
+                value="prod"
+                checked={environment === 'prod'}
+                onChange={() => setEnvironment('prod')}
+              />
+              prod
+            </label>
+          </div>
         </div>
         
         <button onClick={fetchDependencies} disabled={loading}>

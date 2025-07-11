@@ -7,6 +7,7 @@ import QueryMetadataPage from './pages/QueryMetadataPage';
 import ReplicateToBRPage from './pages/ReplicateToBRPage';
 import LoadInforTablePage from './pages/LoadInforTablePage';
 import PipelineBranchOutPage from './pages/PipelineBranchOutPage';
+import GetMetadataDifferences from 'pages/GetMetadataDifferences';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/replicate-to-br" element={<ReplicateToBRPage />} />
           <Route path="/load-infor-table" element={<LoadInforTablePage />} />
           <Route path="/pipeline-branch-out" element={<PipelineBranchOutPage />} />
+          <Route path="/get-metadata-differences" element={<GetMetadataDifferences />} />
         </Routes>
       </div>
     </Router>

@@ -1,20 +1,20 @@
 // src/services/sqlService.js
-const sqlConfig = {
-  dev: {
-    server: 'sql-dev-rmc-dtp-we.database.windows.net',
-    database: 'sqldb-metadata',
-    username: 'sqlserveradmin',
-    password: 'QYl/sYEgKA5EKJzxiea.8',
-    driver: 'ODBC Driver 17 for SQL Server'
-  },
-  prod: {
-    server: 'sql-prod-rmc-dtp-we.database.windows.net',
-    database: 'sqldb-metadata',
-    username: 'sqlserveradmin',
-    password: '6P1+4I8+ASzK2.?hjk',
-    driver: 'ODBC Driver 17 for SQL Server'
-  }
-};
+// const sqlConfig = {
+//   dev: {
+//     server: 'sql-dev-rmc-dtp-we.database.windows.net',
+//     database: 'sqldb-metadata',
+//     username: 'sqlserveradmin',
+//     password: 'QYl/sYEgKA5EKJzxiea.8',
+//     driver: 'ODBC Driver 17 for SQL Server'
+//   },
+//   prod: {
+//     server: 'sql-prod-rmc-dtp-we.database.windows.net',
+//     database: 'sqldb-metadata',
+//     username: 'sqlserveradmin',
+//     password: '6P1+4I8+ASzK2.?hjk',
+//     driver: 'ODBC Driver 17 for SQL Server'
+//   }
+// };
 
 export async function executeQuery(environment, query) {
   try {

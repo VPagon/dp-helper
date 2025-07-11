@@ -20,7 +20,6 @@ function ReplicateToBRPage() {
         `SELECT * FROM rep_mda.mda_ocn_pipelines WHERE pipeline_name LIKE '%${tableName}%'`
         // `SELECT top 1 * FROM rep_mda.mda_ocn_pipelines`
       );
-      console.log(`SELECT * FROM rep_mda.mda_ocn_pipelines WHERE pipeline_name LIKE '%${tableName}%'`);
       setCheckResults(results);
     } catch (err) {
       setError(err.message);

@@ -1,7 +1,17 @@
 .home-page {
-  max-width: 800px;
+  max-width: 1200px; // Increased to accommodate two columns
   margin: 0 auto;
   padding: 20px;
+}
+
+.columns-container {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.column {
+  flex: 1;
   text-align: center;
 }
 
@@ -9,7 +19,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  margin-top: 40px;
+  margin-top: 20px;
 }
 
 .service-card {
@@ -31,4 +41,15 @@
 .service-card h2 {
   margin-top: 0;
   color: #2c3e50;
+}
+
+// Responsive design for smaller screens
+@media (max-width: 768px) {
+  .columns-container {
+    flex-direction: column;
+  }
+  
+  .column {
+    margin-bottom: 30px;
+  }
 }
