@@ -9,6 +9,7 @@ import LoadInforTablePage from './pages/LoadInforTablePage';
 import PipelineBranchOutPage from './pages/PipelineBranchOutPage';
 import GetMetadataDifferences from 'pages/GetMetadataDifferences';
 import DatabaseCRUDPage from 'pages/DatabaseCRUDPage';
+import OrchestratePipelinesPage from './pages/OrchestratePipelinesPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/pipeline-branch-out" element={<PipelineBranchOutPage />} />
           <Route path="/get-metadata-differences" element={<GetMetadataDifferences />} />
           <Route path="/database-crud-page" element={< DatabaseCRUDPage/>} />
+          <Route path="/orchestrate-pipelines" element={<OrchestratePipelinesPage />} />
         </Routes>
       </div>
     </Router>

@@ -47,6 +47,11 @@ function HomePage() {
               <h2>Database CRUD</h2>
               <p>Manage Metadata database</p>
             </Link>
+            
+            <Link to="/orchestrate-pipelines" className="service-card">
+              <h2>Orchestrate Pipelines</h2>
+              <p>Manage orchestration</p>
+            </Link>
           </div>
         </div>
       </div>
