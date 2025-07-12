@@ -65,6 +65,8 @@
     box-shadow: -2px 0 10px rgba(0,0,0,0.1);
     padding: 20px;
     overflow-y: auto;
+		display: flex;
+  	flex-direction: column;
     
     .close-btn {
       position: absolute;

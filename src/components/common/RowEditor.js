@@ -69,6 +69,8 @@ function RowEditor({ row, columns, onClose, onUpdate, tableName }) {
 			>
 				Generate Update
 			</button>
+			<br />
+			<br />
 
 			{showUpdateDialog && (
 				<div className="update-dialog">
