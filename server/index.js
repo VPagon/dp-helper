@@ -7,96 +7,109 @@ const sql = require('mssql');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({
-  strict: false, // Allow single quotes
-  type: 'application/json' // Explicit content type
+	strict: false, // Allow single quotes
+	type: 'application/json' // Explicit content type
 }));
 app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError) {
-    console.error('Bad JSON:', err);
-    return res.status(400).json({ error: 'Invalid JSON format' });
-  }
-  next();
+	if (err instanceof SyntaxError) {
+		console.error('Bad JSON:', err);
+		return res.status(400).json({ error: 'Invalid JSON format' });
+	}
+	next();
 });
 
 // Database config
 const dbConfig = (env) => ({
-  server:
-    env === 'dev'
-      ? process.env.DEV_DB_SERVER
-      : env === 'deploy'
-      ? process.env.DEPLOY_DB_SERVER
-      : process.env.PROD_DB_SERVER,
+	server:
+		env === 'dev'
+			? process.env.DEV_DB_SERVER
+			: env === 'deploy'
+				? process.env.DEPLOY_DB_SERVER
+				: process.env.PROD_DB_SERVER,
 
-  database:
-    env === 'dev'
-      ? process.env.DEV_DB_NAME
-      : env === 'deploy'
-      ? process.env.DEPLOY_DB_NAME
-      : process.env.PROD_DB_NAME,
+	database:
+		env === 'dev'
+			? process.env.DEV_DB_NAME
+			: env === 'deploy'
+				? process.env.DEPLOY_DB_NAME
+				: process.env.PROD_DB_NAME,
 
-  user:
-    env === 'dev'
-      ? process.env.DEV_DB_USER
-      : env === 'deploy'
-      ? process.env.DEPLOY_DB_USER
-      : process.env.PROD_DB_USER,
+	user:
+		env === 'dev'
+			? process.env.DEV_DB_USER
+			: env === 'deploy'
+				? process.env.DEPLOY_DB_USER
+				: process.env.PROD_DB_USER,
 
-  password:
-    env === 'dev'
-      ? process.env.DEV_DB_PASSWORD
-      : env === 'deploy'
-      ? process.env.DEPLOY_DB_PASSWORD
-      : process.env.PROD_DB_PASSWORD,
+	password:
+		env === 'dev'
+			? process.env.DEV_DB_PASSWORD
+			: env === 'deploy'
+				? process.env.DEPLOY_DB_PASSWORD
+				: process.env.PROD_DB_PASSWORD,
 
-  options: {
-    encrypt: true,
-    trustServerCertificate: false,
-    requestTimeout: 60000,
-  },
+	options: {
+		encrypt: true,
+		trustServerCertificate: false,
+		requestTimeout: 60000,
+	},
 });
 
 // API endpoint
 app.post('/api/query', async (req, res) => {
-  const { environment, query } = req.body;
-  console.log("Incoming request headers:", req.headers);
-  console.log("Request body:", req.body);
-  try {
-    const config = dbConfig(environment);
-    
-    // Log the config here instead
-    console.log(`DB Config for ${environment}:`, {
-      server: config.server,
-      database: config.database,
-      user: config.user,
-      password: config.password ? '*****' : 'undefined',
-      options: config.options
-    });
-    
-    const pool = await sql.connect(config);
-    const result = await pool.request().query(query);
-    
-    // Extract column names from the first record
-    const columns = result.recordset.length > 0 
-      ? Object.keys(result.recordset[0])
-      : [];
+	const { environment, query } = req.body;
+	console.log("Incoming request headers:", req.headers);
+	console.log("Request body:", req.body);
+	try {
+		const config = dbConfig(environment);
 
-    // Prepare the response object
-    const responseData = {
-      columns, // Now guaranteed to be an array
-      rows: result.recordset.map(row => Object.values(row))
-    };
+		// Log the config here instead
+		console.log(`DB Config for ${environment}:`, {
+			server: config.server,
+			database: config.database,
+			user: config.user,
+			password: config.password ? '*****' : 'undefined',
+			options: config.options
+		});
 
-    // Log the response before sending it
-    console.log("Response data:", responseData);
+		const pool = await sql.connect(config);
+		const result = await pool.request().query(query);
 
-    // Send the response
-    res.json(responseData);
-  } catch (err) {
-    console.error("Error:", err.message);
-    res.status(500).json({ error: err.message });
-  } finally {
-    sql.close();
-  }
+		// For UPDATE/INSERT/DELETE queries
+		if (/^\s*(UPDATE|INSERT|DELETE)/i.test(query)) {
+			return res.json({
+				success: true,
+				message: `Query executed successfully. Rows affected: ${result.rowsAffected}`,
+				rowsAffected: result.rowsAffected
+			});
+		}
+
+		// Extract column names from the first record
+		// const columns = result.recordset.length > 0
+		// 	? Object.keys(result.recordset[0])
+		// 	: [];
+
+		// For SELECT queries
+		const responseData = {
+			success: true,
+			columns: result.recordset.length > 0 ? Object.keys(result.recordset[0]) : [],
+			rows: result.recordset.map(row => Object.values(row))
+		};
+
+		// Log the response before sending it
+		console.log("Response data:", responseData);
+
+		// Send the response
+		res.json(responseData);
+	} catch (err) {
+		console.error("Database error:", err);
+		res.status(500).json({ 
+			success: false,
+			error: err.message 
+		});
+	} finally {
+		sql.close();
+	}
 });
 
 const PORT = 5000;
