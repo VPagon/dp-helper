@@ -51,14 +51,14 @@ function OrchestratePipelinesPage() {
     const addDependant = (groupKey) => {
         const updated = dependencies.map(group => {
             if (group.key === groupKey) {
-                return { 
-                    ...group, 
-                    dependants: [...group.dependants, { 
-                        id: Date.now(), 
-                        searchTerm: '', 
+                return {
+                    ...group,
+                    dependants: [...group.dependants, {
+                        id: Date.now(),
+                        searchTerm: '',
                         searchResults: [],
                         selectedPipeline: null
-                    }] 
+                    }]
                 };
             }
             return group;
@@ -85,8 +85,8 @@ function OrchestratePipelinesPage() {
     const handlePipelineSearch = (groupKey, term) => {
         const updated = dependencies.map(group => {
             if (group.key === groupKey) {
-                return { 
-                    ...group, 
+                return {
+                    ...group,
                     pipelineSearchTerm: term,
                     pipelineSearchResults: searchPipelines(term)
                 };
@@ -115,11 +115,11 @@ function OrchestratePipelinesPage() {
     const selectPipeline = (groupKey, pipeline) => {
         const updated = dependencies.map(group => {
             if (group.key === groupKey) {
-                return { 
-                    ...group, 
+                return {
+                    ...group,
                     pipeline: pipeline,
                     pipelineSearchTerm: '',
-                    pipelineSearchResults: [] 
+                    pipelineSearchResults: []
                 };
             }
             return group;
@@ -157,10 +157,9 @@ function OrchestratePipelinesPage() {
                         inserts.push(
                             `INSERT INTO rep_mda.mda_ocn_pipeline_dependencies (\n` +
                             `  pipeline_id, dependant_pipeline_id, dependency_lag,\n` +
-                            `  date_last_modified, user_last_modified, key_dep, additional_checks\n` +
+                            `  key_dep, additional_checks\n` +
                             `) VALUES (\n` +
                             `  ${group.pipeline[0]}, ${dependant.selectedPipeline[0]}, 0,\n` +
-                            `  '${today}.000', '${localStorage.getItem('userEmail') || 'system'}',\n` +
                             `  '${keyDep}', NULL\n` +
                             `);`
                         );
@@ -170,6 +169,27 @@ function OrchestratePipelinesPage() {
         });
 
         setGeneratedSQL(inserts.join('\n\n'));
+    };
+
+    const executeGeneratedSQL = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const sqlStatements = generatedSQL.split(';\n\n').filter(statement => statement.trim());
+
+            for (const sql of sqlStatements) {
+                await executeQuery(environment, sql);
+            }
+
+            await fetchPipelines();
+
+            setError({ message: 'SQL executed successfully!', type: 'success' });
+        } catch (err) {
+            setError({ message: `Execution failed: ${err.message}`, type: 'error' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -279,18 +299,32 @@ function OrchestratePipelinesPage() {
                 </button>
             )}
 
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+                <div className={`error-message ${error.type}`}>
+                    {error.message}
+                </div>
+            )}
 
             {generatedSQL && (
                 <div className="sql-output">
                     <h3>Generated SQL</h3>
                     <pre>{generatedSQL}</pre>
-                    <button
-                        onClick={() => navigator.clipboard.writeText(generatedSQL)}
-                        className="copy-btn"
-                    >
-                        Copy to Clipboard
-                    </button>
+                    <div className="sql-actions">
+                        <button
+                            onClick={() => navigator.clipboard.writeText(generatedSQL)}
+                            className="copy-btn"
+                            disabled={loading}
+                        >
+                            Copy to Clipboard
+                        </button>
+                        <button
+                            onClick={executeGeneratedSQL}
+                            className="execute-btn"
+                            disabled={loading}
+                        >
+                            {loading ? 'Executing...' : 'Execute Query'}
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
