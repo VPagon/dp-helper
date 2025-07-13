@@ -1,0 +1,18 @@
+/* src/components/common/HomeButton.css */
+.add-dependancy-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  z-index: 1000;
+}
+
+.add-dependancy-button:hover {
+  background-color: #45a049;
+}

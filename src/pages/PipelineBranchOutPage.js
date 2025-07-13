@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { executeQuery } from '../services/sqlService';
 import '../styles/pages/PipelineBranchOutPage.css';
 import HomeButton from 'components/common/HomeButtom';
+import AddDependancyButton from 'components/common/AddDependancyButton'
 
 function PipelineBranchOutPage() {
   const [pipelineName, setPipelineName] = useState('');
@@ -199,6 +200,7 @@ function PipelineBranchOutPage() {
   return (
     <div className="pipeline-branch-out">
       <HomeButton />
+      <AddDependancyButton />
       <h1>Pipeline Branch Out</h1>
       
       <div className="input-section">
