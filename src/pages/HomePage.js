@@ -25,6 +25,10 @@ function HomePage() {
               <h2>Pipeline Branch Out</h2>
               <p>Visualize pipeline dependencies and execution order</p>
             </Link>
+            <Link to="/monitor-offloading" className="service-card">
+              <h2>Monitor Offloading</h2>
+              <p>Display count of tables that are set to offload</p>
+            </Link>
           </div>
         </div>
 

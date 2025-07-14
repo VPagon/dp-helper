@@ -1,78 +1,106 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const sql = require('mssql');
+require('dotenv').config({ path: `${__dirname}/.env` }); // Adjust path if needed
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json({
-	strict: false, // Allow single quotes
-	type: 'application/json' // Explicit content type
-}));
-app.use((err, req, res, next) => {
-	if (err instanceof SyntaxError) {
-		console.error('Bad JSON:', err);
-		return res.status(400).json({ error: 'Invalid JSON format' });
+app.use(bodyParser.json());
+
+// Create a connection pool cache
+const poolCache = new Map();
+
+const dbConfig = (environment) => {
+	// Helper function to get env var or throw meaningful error
+	const getEnv = (key) => {
+		const value = process.env[key];
+		if (!value) throw new Error(`Missing environment variable: ${key}`);
+		return value;
+	};
+
+	// Handle simple environments (dev, prod) - metadata databases
+	if (['dev', 'prod'].includes(environment)) {
+		try {
+			return {
+				server: getEnv(`${environment.toUpperCase()}_METADATA_DB_SERVER`),
+				database: getEnv(`${environment.toUpperCase()}_METADATA_DB_NAME`),
+				user: getEnv(`${environment.toUpperCase()}_METADATA_DB_USER`),
+				password: getEnv(`${environment.toUpperCase()}_METADATA_DB_PASSWORD`),
+				options: {
+					encrypt: true,
+					trustServerCertificate: false,
+					requestTimeout: 60000,
+				},
+				pool: {
+					max: 10,
+					min: 0,
+					idleTimeoutMillis: 30000
+				}
+			};
+		} catch (err) {
+			throw new Error(`Metadata configuration error for ${environment}: ${err.message}`);
+		}
 	}
-	next();
-});
 
-// Database config
-const dbConfig = (env) => ({
-	server:
-		env === 'dev'
-			? process.env.DEV_DB_SERVER
-			: env === 'deploy'
-				? process.env.DEPLOY_DB_SERVER
-				: process.env.PROD_DB_SERVER,
+	// Handle compound environments (dev-mes, prod-itac, etc.)
+	if (environment.includes('-')) {
+		const [env, dbType] = environment.split('-');
+		try {
+			return {
+				server: getEnv(`${env.toUpperCase()}_${dbType.toUpperCase()}_DB_SERVER`),
+				database: getEnv(`${env.toUpperCase()}_${dbType.toUpperCase()}_DB_NAME`),
+				user: getEnv(`${env.toUpperCase()}_${dbType.toUpperCase()}_DB_USER`),
+				password: getEnv(`${env.toUpperCase()}_${dbType.toUpperCase()}_DB_PASSWORD`),
+				options: {
+					encrypt: true,
+					trustServerCertificate: false,
+					requestTimeout: 60000,
+				},
+				pool: {
+					max: 10,
+					min: 0,
+					idleTimeoutMillis: 30000
+				}
+			};
+		} catch (err) {
+			throw new Error(`Configuration error for ${environment}: ${err.message}`);
+		}
+	}
 
-	database:
-		env === 'dev'
-			? process.env.DEV_DB_NAME
-			: env === 'deploy'
-				? process.env.DEPLOY_DB_NAME
-				: process.env.PROD_DB_NAME,
+	throw new Error(`Invalid environment format: ${environment}. Expected 'dev', 'prod', or format like 'dev-mes'`);
+};
 
-	user:
-		env === 'dev'
-			? process.env.DEV_DB_USER
-			: env === 'deploy'
-				? process.env.DEPLOY_DB_USER
-				: process.env.PROD_DB_USER,
 
-	password:
-		env === 'dev'
-			? process.env.DEV_DB_PASSWORD
-			: env === 'deploy'
-				? process.env.DEPLOY_DB_PASSWORD
-				: process.env.PROD_DB_PASSWORD,
+// Get or create a connection pool
+async function getPool(environment) {
+	if (!poolCache.has(environment)) {
+		const config = dbConfig(environment);
+		const pool = new sql.ConnectionPool(config);
+		const close = pool.close.bind(pool);
 
-	options: {
-		encrypt: true,
-		trustServerCertificate: false,
-		requestTimeout: 60000,
-	},
-});
+		// Override pool.close to remove from cache
+		pool.close = async () => {
+			await close();
+			poolCache.delete(environment);
+		};
+
+		// Store the connecting promise in cache
+		poolCache.set(environment, pool.connect());
+	}
+
+	return poolCache.get(environment);
+}
 
 // API endpoint
 app.post('/api/query', async (req, res) => {
 	const { environment, query } = req.body;
-	console.log("Incoming request headers:", req.headers);
-	console.log("Request body:", req.body);
+
 	try {
-		const config = dbConfig(environment);
+		// Get the connection pool
+		const poolPromise = getPool(environment);
+		const pool = await poolPromise;
 
-		// Log the config here instead
-		console.log(`DB Config for ${environment}:`, {
-			server: config.server,
-			database: config.database,
-			user: config.user,
-			password: config.password ? '*****' : 'undefined',
-			options: config.options
-		});
-
-		const pool = await sql.connect(config);
 		const result = await pool.request().query(query);
 
 		// For UPDATE/INSERT/DELETE queries
@@ -84,32 +112,43 @@ app.post('/api/query', async (req, res) => {
 			});
 		}
 
-		// Extract column names from the first record
-		// const columns = result.recordset.length > 0
-		// 	? Object.keys(result.recordset[0])
-		// 	: [];
-
 		// For SELECT queries
-		const responseData = {
+		res.json({
 			success: true,
 			columns: result.recordset.length > 0 ? Object.keys(result.recordset[0]) : [],
 			rows: result.recordset.map(row => Object.values(row))
-		};
-
-		// Log the response before sending it
-		console.log("Response data:", responseData);
-
-		// Send the response
-		res.json(responseData);
+		});
 	} catch (err) {
 		console.error("Database error:", err);
-		res.status(500).json({ 
+		res.status(500).json({
 			success: false,
-			error: err.message 
+			error: err.message
 		});
-	} finally {
-		sql.close();
 	}
+});
+
+app.get('/api/test-config', (req, res) => {
+	try {
+		const devConfig = dbConfig('dev');
+		const devMesConfig = dbConfig('dev-mes');
+		res.json({
+			success: true,
+			devConfig: { ...devConfig, password: '*****' },
+			devMesConfig: { ...devMesConfig, password: '*****' }
+		});
+	} catch (err) {
+		res.status(500).json({ success: false, error: err.message });
+	}
+});
+
+// Close all pools on shutdown
+process.on('SIGINT', async () => {
+	await Promise.all(
+		Array.from(poolCache.values()).map(poolPromise =>
+			poolPromise.then(pool => pool.close()).catch(console.error)
+		)
+	);
+	process.exit(0);
 });
 
 const PORT = 5000;
