@@ -121,7 +121,8 @@ function PipelineBranchOutPage() {
           ocn_tool_batch_id
        FROM rep_mda.mda_ocn_execution_log 
        WHERE pipeline_name = '${pipelineName}'
-       ORDER BY start_date_time DESC`
+       AND extract_date >= DATEADD(DAY, -30, GETDATE())
+       ORDER BY 1 DESC`
     );
     return result.rows;
   } catch (err) {

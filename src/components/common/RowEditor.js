@@ -45,7 +45,7 @@ function RowEditor({ row, columns, onClose, onUpdate, tableName }) {
 
 	return (
 		<div className="row-editor">
-			<button className="close-btn" onClick={onClose}>×</button>
+			<button className="close-btn" onClick={onClose}>X</button>
 			<h3>Edit Row</h3>
 
 			{error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}

@@ -27,7 +27,9 @@ function InsertDataPage() {
       'date_last_modified',
       'dat_last_modified',
       'user_last_modified',
-      'highest_watermark'
+      'highest_watermark',
+      'date_of_insert',
+      'date_insert'
     ]);
 
     const lines = inputData.split('\n').filter(line => line.trim());

@@ -11,6 +11,11 @@ import GetMetadataDifferences from 'pages/GetMetadataDifferences';
 import DatabaseCRUDPage from 'pages/DatabaseCRUDPage';
 import OrchestratePipelinesPage from './pages/OrchestratePipelinesPage';
 import MonitorOffloadingPage from './pages/MonitorOffloadingPage';
+import LoadJiraAssetPage from './pages/LoadJiraAssetPage';
+import PipelineAnalysisPage from './pages/PipelineAnalysisPage';
+import AddDQRulesPage from './pages/AddDQRulesPage';
+import ExecutionLogDashboard from './pages/ExecutionLogDashboard';
+import AutoDeployMetadata from './pages/AutoDeployMetadata';
 
 function App() {
   return (
@@ -24,10 +29,15 @@ function App() {
           <Route path="/replicate-to-br" element={<ReplicateToBRPage />} />
           <Route path="/load-infor-table" element={<LoadInforTablePage />} />
           <Route path="/pipeline-branch-out" element={<PipelineBranchOutPage />} />
-          <Route path="/get-metadata-differences" element={<GetMetadataDifferences />} />
-          <Route path="/database-crud-page" element={< DatabaseCRUDPage/>} />
+          <Route path="/metadata-differences" element={<GetMetadataDifferences />} />
+          <Route path="/database-crud-page" element={< DatabaseCRUDPage />} />
           <Route path="/orchestrate-pipelines" element={<OrchestratePipelinesPage />} />
           <Route path="/monitor-offloading" element={<MonitorOffloadingPage />} />
+          <Route path="/load-jira-asset" element={<LoadJiraAssetPage />} />
+          <Route path="/pipeline-analysis" element={<PipelineAnalysisPage />} />
+          <Route path="/add-dq-rules" element={<AddDQRulesPage />} />
+          <Route path="/execution-logs" element={<ExecutionLogDashboard />} />
+          <Route path="/auto-deploy" element={<AutoDeployMetadata />} />
         </Routes>
       </div>
     </Router>
