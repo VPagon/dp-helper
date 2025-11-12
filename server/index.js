@@ -45,7 +45,25 @@ const CONNECTION_CONFIGS = {
   'prod-itac': {
     envPattern: ['PROD_ITAC_DB_SERVER', 'PROD_ITAC_DB_NAME', 'PROD_ITAC_DB_USER', 'PROD_ITAC_DB_PASSWORD'],
     type: 'itac'
-  }
+  },
+
+  // MES databases
+  'dev-sig-etl': {
+    envPattern: ['DEV_SIG_ETL_DB_SERVER', 'DEV_SIG_ETL_DB_NAME', 'DEV_SIG_ETL_DB_USER', 'DEV_SIG_ETL_DB_PASSWORD'],
+    type: 'sig-etl'
+  },
+  'prod-sig-etl': {
+    envPattern: ['PROD_SIG_ETL_DB_SERVER', 'PROD_SIG_ETL_DB_NAME', 'PROD_SIG_ETL_DB_USER', 'PROD_SIG_ETL_DB_PASSWORD'],
+    type: 'sig-etl'
+  },
+  'dev-sqldb-kup-app': {
+    envPattern: ['DEV_SQLDB_KUP_APP_SERVER', 'DEV_SQLDB_KUP_APP_NAME', 'DEV_SQLDB_KUP_APP_USER', 'DEV_SQLDB_KUP_APP_PASSWORD'],
+    type: 'sqldb-kup-app'
+  },
+  'prod-sqldb-kup-app': {
+    envPattern: ['PROD_SQLDB_KUP_APP_SERVER', 'PROD_SQLDB_KUP_APP_NAME', 'PROD_SQLDB_KUP_APP_USER', 'PROD_SQLDB_KUP_APP_PASSWORD'],
+    type: 'sqldb-kup-app'
+  },
 };
 
 // Helper function to get env var or throw meaningful error
@@ -153,6 +171,8 @@ app.post('/api/test-connection', async (req, res) => {
 // API endpoint
 app.post('/api/query', async (req, res) => {
   const { environment, query } = req.body;
+
+  console.log(query)
 
   if (!environment || !query) {
     return res.status(400).json({

@@ -1,0 +1,150 @@
+.auto-deploy-metadata {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.environment-info {
+  background-color: #e3f2fd;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 4px solid #2196f3;
+}
+
+.section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.search-box {
+  margin-bottom: 15px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.pipelines-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.pipeline-item {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pipeline-item:hover {
+  background-color: #f8f9fa;
+}
+
+.pipeline-item.selected {
+  background-color: #e3f2fd;
+  border-left: 3px solid #007bff;
+}
+
+.selected-pipelines {
+  margin-bottom: 15px;
+}
+
+.selected-pipeline {
+  padding: 8px;
+  background-color: #e8f5e8;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.release-name {
+  margin-bottom: 15px;
+}
+
+.release-name label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.release-name input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.entities-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.entity-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 10px;
+}
+
+.entity-type {
+  font-weight: 500;
+  min-width: 200px;
+  color: #2c3e50;
+}
+
+.entity-identifier {
+  flex: 1;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.entity-item select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #f5c6cb;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}

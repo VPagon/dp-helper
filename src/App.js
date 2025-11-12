@@ -16,6 +16,8 @@ import PipelineAnalysisPage from './pages/PipelineAnalysisPage';
 import AddDQRulesPage from './pages/AddDQRulesPage';
 import ExecutionLogDashboard from './pages/ExecutionLogDashboard';
 import AutoDeployMetadata from './pages/AutoDeployMetadata';
+import DatabaseCRUDPageV2 from 'pages/DatabaseCRUDPageV2';
+import DataSyncPage from './pages/DataSyncPage';
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
           <Route path="/add-dq-rules" element={<AddDQRulesPage />} />
           <Route path="/execution-logs" element={<ExecutionLogDashboard />} />
           <Route path="/auto-deploy" element={<AutoDeployMetadata />} />
+          <Route path="/database-crud-page-v2" element={<DatabaseCRUDPageV2 />} />
+          <Route path="/data-sync" element={<DataSyncPage />} />
         </Routes>
       </div>
     </Router>

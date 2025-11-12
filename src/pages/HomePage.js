@@ -57,6 +57,10 @@ function HomePage() {
               <h3>Database CRUD</h3>
               <p>Manage metadata database tables</p>
             </Link>
+            <Link to="/database-crud-page-v2" className="tool-card">
+              <h3>Database CRUD V2</h3>
+              <p>Manage metadata database tables</p>
+            </Link>
           </div>
         </div>
 
@@ -102,6 +106,15 @@ function HomePage() {
           </div>
         </div>
 
+        <div className="category-card">
+          <h2>Data migration</h2>
+          <div className="tool-list">
+            <Link to="/data-sync" className="tool-card">
+              <h3>SQLDB-KUP-APP DEV-PROD MIGRATION</h3>
+              <p>Migrate keeping up data from dev to prod server</p>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

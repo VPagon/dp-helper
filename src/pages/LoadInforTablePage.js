@@ -13,7 +13,7 @@ function LoadInforTablePage() {
     
     const today = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const initialDate = new Date();
-    initialDate.setMonth(initialDate.getMonth() - 4); // 4 months ago
+    initialDate.setMonth(initialDate.getMonth() - 1); // 1 months ago
     const initialDateStr = initialDate.toISOString().slice(0, 19).replace('T', ' ');
     
     const sql = `
@@ -127,7 +127,7 @@ INSERT INTO rep_mda.mda_data_ingestion (
 VALUES (
     'MS_SQL_CDC_INFOR_DBO_${tableName.toUpperCase()}_TO_BRONZE_LANDING_ZONE',
     '{"schema":"dbo","table":"${tableName.toLowerCase()}"}',
-    '{"SourceConnectionAlias":"infor","LinkedServiceName":"LS_GEN_SHIR_SQLServerWindowsAuth","MSSQLServerName":"INFORPRODDB\\INFORPROD","MSSQLDatabaseName":"infordb","DatastoreType":"RimacOnPremSQLServerTableCdc"}',
+    '{"SourceConnectionAlias":"infor","LinkedServiceName":"LS_GEN_SHIR_SQLServerWindowsAuth","MSSQLServerName":"RT-VS-PR-085\\\\INFORTESTLN","MSSQLDatabaseName":"infordb","DatastoreType":"RimacOnPremSQLServerTableCdc"}',
     '{"PartitionOption":"None","PartitionNames":null}',
     '{"fileName":"#schema#.#table#.snappy.parquet","folderPath":"01_#source#\\/01_#schema#\\/04_parquet\\/lze_#table#\\/#subfolder#\\/year=#year#\\/month=#month#\\/day=#day#","fileSystem":"01-bronze\\/01_landing"}',
     NULL,
@@ -135,8 +135,8 @@ VALUES (
     '{"logFolderPath":"00-default\\/900_logs\\/#date_yyyyMMdd#\\/01_data_ingestion\\/#pipeline#\\/load_sql_cdc\\/#folder_path#"}',
     'PPE_MdaIngestionTopLevel',
     '["Sandbox","Manual","TGR_Scheduled3AM","<ANY>"]',
-    '{"dataLoadingBehavior":"DeltaLoad","watermarkColumnStartValue":"${today}"}',
-    15,
+    '{     "dataLoadingBehavior": "FullLoad",     "watermarkColumnName": null,     "watermarkColumnType": null,     "watermarkColumnStartValue": null }',
+    110,
     'Default',
     1);
 

@@ -15,7 +15,9 @@ function MonitorOffloadingPage() {
         { value: 'dev-mes', label: 'MES (DEV)' },
         { value: 'prod-mes', label: 'MES (PROD)' },
         { value: 'dev-itac', label: 'ITAC (DEV)' },
-        { value: 'prod-itac', label: 'ITAC (PROD)' }
+        { value: 'prod-itac', label: 'ITAC (PROD)' },
+        { value: 'dev-sig-etl', label: 'SIG-ETL DB (DEV)' },
+        { value: 'prod-sig-etl', label: 'SIG-ETL DB (PROD)' }
     ];
 
     const fetchOffloadingData = async () => {
