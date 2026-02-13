@@ -18,6 +18,8 @@ import ExecutionLogDashboard from './pages/ExecutionLogDashboard';
 import AutoDeployMetadata from './pages/AutoDeployMetadata';
 import DatabaseCRUDPageV2 from 'pages/DatabaseCRUDPageV2';
 import DataSyncPage from './pages/DataSyncPage';
+import MetadateriumPage from './pages/MetadateriumPage';
+import LocalDatabaseManager from './pages/LocalDatabaseManager';
 
 function App() {
   return (
@@ -42,6 +44,8 @@ function App() {
           <Route path="/auto-deploy" element={<AutoDeployMetadata />} />
           <Route path="/database-crud-page-v2" element={<DatabaseCRUDPageV2 />} />
           <Route path="/data-sync" element={<DataSyncPage />} />
+          <Route path="/metadaterium" element={<MetadateriumPage />} />
+          <Route path="/local-database-manager" element={<LocalDatabaseManager />} />
         </Routes>
       </div>
     </Router>

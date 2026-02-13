@@ -98,8 +98,8 @@ UPDATE rep_mda.mda_ocn_pipeline_parameters
 SET parameter_value=REPLACE(parameter_value,']',', "REPLICATION_RAW_R_LN_DBO_${tableName.toUpperCase()}_TO_AZURE_SQL_BR"]') 
 WHERE parameter_id=921;
 
-INSERT INTO rep_mda.mda_ocn_pipelines (pipeline_name, pipeline_short_name, pipeline_description, schedule_type, enabled, is_running, batch_type, metadata_tool_name, metadata_tool_job_pk, multiple_loads, prod_mail_to, test_mail_to, pipeline_type, load_category, pipeline_owner, initial_date)
-VALUES ('REPLICATION_RAW_R_LN_DBO_${tableName.toUpperCase()}_TO_AZURE_SQL_BR', 'RPN_RAW_SQL_${tableName.toUpperCase()}', '','D',1,0,'BT',NULL,NULL,1,NULL,NULL,'METADATA_DRIVEN_INGESTION','standard_load', 'Vilim Pagon', '${new Date().toISOString().split('T')[0]} 00:00:00.000');
+INSERT INTO rep_mda.mda_ocn_pipelines (pipeline_name, pipeline_short_name, pipeline_description, schedule_type, enabled, is_running, batch_type, metadata_tool_name, metadata_tool_job_pk, multiple_loads, prod_mail_to, test_mail_to, pipeline_type, load_category, pipeline_owner, initial_date, pipeline_priority, execution_resource, orchestrator_tool)
+VALUES ('REPLICATION_RAW_R_LN_DBO_${tableName.toUpperCase()}_TO_AZURE_SQL_BR', 'RPN_RAW_SQL_${tableName.toUpperCase()}', '','D',1,0,'BT',NULL,NULL,1,NULL,NULL,'METADATA_DRIVEN_INGESTION','standard_load', 'Vilim Pagon', '${new Date().toISOString().split('T')[0]} 00:00:00.000', '90', 'AZURE_SYNAPSE_PIPELINE', 'Synapse Pipeline');
 
 -- Add dependencies
 INSERT INTO rep_mda.mda_ocn_pipeline_dependencies (pipeline_id, dependant_pipeline_id, dependency_lag, key_dep, additional_checks)

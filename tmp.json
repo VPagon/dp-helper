@@ -1,0 +1,92 @@
+{
+    "fields": {
+        "project": {
+            "key": "#project_key#"
+        },
+        "summary": "#issue_summary#",
+        "customfield_10064": [
+            {
+                "name": "#support_group_name#"
+            }
+        ],
+        "issuetype": {
+            "name": "#issue_type_name#"
+        },
+        "description": {
+            "version": 1,
+            "type": "doc",
+            "content": [
+                {
+                    "content": [
+                        {
+                            "text": "#issue_description#",
+                            "type": "text"
+                        }
+                    ],
+                    "type": "paragraph"
+                }
+            ]
+        },
+        "assignee": {
+            "accountId": "#assignee_id#"
+        },
+        "reporter": {
+            "accountId": "#reporter_id#"
+        },
+        "priority": {
+            "name": "#priority_name#"
+        },
+        "components":"#components_list#",
+        "labels": #labels_list#,
+        "customfield_10146": [
+            {
+                "key": "#affected_software_id#"
+            }
+        ],
+        "customfield_10147": [
+            {
+                "key": "#affected_software_module_id#"
+            }
+        ]
+    }
+}
+
+{
+    "project_key": "ITSM",
+    "issue_summary": "[BR-131][" + f_return_runtime_extract_date() +"] - ITSM tickets without reporter company defined",
+    "groupId": "daeb6940-575a-4f95-959e-f62ca0d8cf8f",
+    "support_group_name": "Digitalization",
+    "issue_type_name": "[System] Service Request",
+    "issue_description": "Attached is Excel file with a list of ITSM tickets where Reporters Company is missing.  Please assign this ticket to Digitalization.",
+    "assignee_id": "712020:e5975e51-6463-4aa4-b2b0-7a9a99f2fcc6",
+    "reporter_id": "63f48395d6722987749ceb4a",
+    "priority_name": "Low",
+    "components_list": "Jira SD",
+    "labels_list":str([
+        "DQ",
+        "ITSM_tickets_without_reporter_company_defined"
+    ]),
+    "affected_software_id": "75da6507-395e-4ade-a719-fd57f7258fe9:13638",
+    "affected_software_module_id": "75da6507-395e-4ade-a719-fd57f7258fe9:13641"
+}
+
+
+
+{
+    "project_key": "ITSM",
+    "issue_summary": "[BR-131][" + f_return_runtime_extract_date() +"] - ITSM tickets without reporter company defined",
+    "groupId": "daeb6940-575a-4f95-959e-f62ca0d8cf8f",
+    "support_group_name": "Digitalization",
+    "issue_type_name": "[System] Service Request",
+    "issue_description": "Attached is Excel file with a list of ITSM tickets where Reporters Company is missing.  Please assign this ticket to Digitalization.",
+    "assignee_id": "712020:e5975e51-6463-4aa4-b2b0-7a9a99f2fcc6",
+    "reporter_id": "63f48395d6722987749ceb4a",
+    "priority_name": "Low",
+    "components_list": "Jira SD",
+    "labels_list":str([
+        "DQ",
+        "ITSM_tickets_without_reporter_company_defined"
+    ]),
+    "affected_software_id": "75da6507-395e-4ade-a719-fd57f7258fe9:13638",
+    "affected_software_module_id": "75da6507-395e-4ade-a719-fd57f7258fe9:13641"
+}invalid syntax. Perhaps you forgot a comma? (<string>, line 1)

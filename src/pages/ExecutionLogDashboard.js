@@ -14,7 +14,7 @@ function ExecutionLogDashboard() {
 		pipeline_id: '',
 		pipeline_name: '',
 		pipeline_status: '',
-		extract_date: '',
+		extract_date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
 		start_date_time: '',
 		end_date_time: ''
 	});
@@ -22,9 +22,9 @@ function ExecutionLogDashboard() {
 		queue_id: '',
 		pipeline_id: '',
 		pipeline_name: '',
-		queue_status: ['Ready', 'Finished'],
+		queue_status: '',
 		date_last_modified: '',
-		extract_date: '',
+		extract_date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
 		date_of_insert: ''
 	});
 	const [page, setPage] = useState(1);
@@ -36,6 +36,7 @@ function ExecutionLogDashboard() {
 	const [pipelineResults, setPipelineResults] = useState([]);
 	const [selectedPipeline, setSelectedPipeline] = useState(null);
 	const [dependencyCheckResults, setDependencyCheckResults] = useState(null);
+	const [extractDate, setExtractDate] = useState(new Date(Date.now() - 86400000).toISOString().split('T')[0]);
 
 	const statusOptions = ['Succeeded', 'In Progress', 'Failed', 'Cancelled'];
 	const queueStatusOptions = ['Blocked', 'Cancelled', 'Finished', 'Ready', 'Fired'];
@@ -52,7 +53,7 @@ function ExecutionLogDashboard() {
 			if (filters.pipeline_id) whereConditions.push(`pipeline_id = ${filters.pipeline_id}`);
 			if (filters.pipeline_name) whereConditions.push(`pipeline_name LIKE '%${filters.pipeline_name}%'`);
 			if (filters.pipeline_status) whereConditions.push(`pipeline_status = '${filters.pipeline_status}'`);
-			if (filters.extract_date) whereConditions.push(`CONVERT(date, extract_date) = '${filters.extract_date}'`);
+			if (filters.extract_date) whereConditions.push(`extract_date >= '${filters.extract_date} 00:00:00' and extract_date <= '${filters.extract_date} 23:59:59'`);
 			if (filters.start_date_time) whereConditions.push(`start_date_time >= '${filters.start_date_time}'`);
 			if (filters.end_date_time) whereConditions.push(`end_date_time <= '${filters.end_date_time}'`);
 
@@ -77,7 +78,7 @@ function ExecutionLogDashboard() {
            start_date_time, end_date_time, error_message, number_of_changed_rows
          FROM rep_mda.mda_ocn_execution_log 
          ${whereClause}
-         ORDER BY start_date_time DESC
+         ORDER BY log_id DESC
          OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`
 			);
 
@@ -105,9 +106,8 @@ function ExecutionLogDashboard() {
 				whereConditions.push(`pipeline_name LIKE '%${queueFilters.pipeline_name}%'`);
 			}
 
-			if (queueFilters.queue_status.length > 0) {
-				const statusList = queueFilters.queue_status.map(status => `'${status}'`).join(',');
-				whereConditions.push(`queue_status IN (${statusList})`);
+			if (queueFilters.queue_status) {
+				whereConditions.push(`queue_status = '${queueFilters.queue_status}'`);
 			}
 
 			if (queueFilters.date_last_modified) {
@@ -115,7 +115,7 @@ function ExecutionLogDashboard() {
 			}
 
 			if (queueFilters.extract_date) {
-				whereConditions.push(`CONVERT(date, extract_date) = '${queueFilters.extract_date}'`);
+				whereConditions.push(`extract_date >= '${queueFilters.extract_date} 00:00:00' and extract_date <= '${queueFilters.extract_date} 23:59:59'`);
 			}
 
 			if (queueFilters.date_of_insert) {
@@ -126,7 +126,7 @@ function ExecutionLogDashboard() {
 
 			const result = await executeQuery(
 				environment,
-				`SELECT TOP 20
+				`SELECT 
          queue_id, pipeline_id, pipeline_name, queue_status, 
          date_last_modified, extract_date, date_of_insert, custom_params
        FROM rep_mda.mda_ocn_execution_queue 
@@ -205,31 +205,13 @@ function ExecutionLogDashboard() {
 			setLoading(true);
 			const result = await executeQuery(
 				environment,
-				`WITH DependencyCTE AS (
-          SELECT p.pipeline_id, p.pipeline_name, 1 AS level
-          FROM rep_mda.mda_ocn_pipelines p
-          JOIN rep_mda.mda_ocn_pipeline_dependencies d ON p.pipeline_id = d.pipeline_id
-          WHERE d.dependant_pipeline_id = ${selectedPipeline[0]}
-          
-          UNION ALL
-          
-          SELECT p.pipeline_id, p.pipeline_name, u.level + 1
-          FROM rep_mda.mda_ocn_pipelines p
-          JOIN rep_mda.mda_ocn_pipeline_dependencies d ON p.pipeline_id = d.pipeline_id
-          JOIN DependencyCTE u ON d.dependant_pipeline_id = u.pipeline_id
-          WHERE u.level < 10
-        )
-        SELECT d.pipeline_id, d.pipeline_name, d.level,
-               CASE WHEN l.log_id IS NULL THEN 'Not Executed' ELSE 'Executed' END as execution_status,
-               l.pipeline_status, l.start_date_time
-        FROM DependencyCTE d
-        LEFT JOIN (
-          SELECT pipeline_id, log_id, pipeline_status, start_date_time,
-                 ROW_NUMBER() OVER (PARTITION BY pipeline_id ORDER BY start_date_time DESC) as rn
-          FROM rep_mda.mda_ocn_execution_log 
-          WHERE pipeline_id IN (SELECT pipeline_id FROM DependencyCTE)
-        ) l ON d.pipeline_id = l.pipeline_id AND l.rn = 1
-        ORDER BY d.level, d.pipeline_name`
+				`declare @extract_date datetime 
+				set @extract_date = '${extractDate} 00:00:00.000'
+				select pd.dependant_pipeline_id, p.pipeline_name, * from rep_mda.mda_ocn_pipeline_dependencies pd 
+				left join rep_mda.mda_ocn_execution_log el on el.extract_date=@extract_date and pd.dependant_pipeline_id=el.pipeline_id
+				left join rep_mda.mda_ocn_pipelines p on pd.dependant_pipeline_id=p.pipeline_id 
+				where pd.pipeline_id=(select pipeline_id from rep_mda.mda_ocn_pipelines where pipeline_name = '${selectedPipeline[1]}')
+				and el.log_id is null`
 			);
 
 			setDependencyCheckResults(result.rows);
@@ -245,20 +227,21 @@ function ExecutionLogDashboard() {
 		setQueueFilters(prev => ({ ...prev, [field]: value }));
 	};
 
-	const handleQueueStatusChange = (status) => {
-		setQueueFilters(prev => {
-			const newStatuses = prev.queue_status.includes(status)
-				? prev.queue_status.filter(s => s !== status)
-				: [...prev.queue_status, status];
-
-			return { ...prev, queue_status: newStatuses };
-		});
+	const handleApplyQueueFilters = () => {
+		fetchExecutionQueue();
 	};
 
-	useEffect(() => {
-		fetchExecutionLogs();
-		fetchExecutionQueue();
-	}, [environment, page, pageSize]);
+	const handleClearQueueFilters = () => {
+		setQueueFilters({
+			queue_id: '',
+			pipeline_id: '',
+			pipeline_name: '',
+			queue_status: '',
+			date_last_modified: '',
+			extract_date: '',
+			date_of_insert: ''
+		});
+	};
 
 	const handleFilterChange = (field, value) => {
 		setFilters(prev => ({ ...prev, [field]: value }));
@@ -293,6 +276,54 @@ function ExecutionLogDashboard() {
 	};
 
 	const totalPages = Math.ceil(totalCount / pageSize);
+
+	const formatDateTime = (dateTimeString) => {
+		if (!dateTimeString) return 'N/A';
+
+		// Parse the date string directly without timezone conversion
+		const date = new Date(dateTimeString);
+
+		// Check if the date is valid
+		if (isNaN(date.getTime())) return 'N/A';
+
+		// Use UTC methods to avoid timezone conversion
+		const year = date.getUTCFullYear();
+		const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+		const day = String(date.getUTCDate()).padStart(2, '0');
+		const hours = String(date.getUTCHours()).padStart(2, '0');
+		const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+		const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+
+		return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
+	};
+
+	const formatDateOnly = (dateTimeString) => {
+		if (!dateTimeString) return 'N/A';
+
+		const date = new Date(dateTimeString);
+		if (isNaN(date.getTime())) return 'N/A';
+
+		const year = date.getUTCFullYear();
+		const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+		const day = String(date.getUTCDate()).padStart(2, '0');
+
+		return `${month}/${day}/${year}`;
+	};
+
+	const formatDateTimeLocal = (dateTimeString) => {
+		if (!dateTimeString) return 'N/A';
+
+		const date = new Date(dateTimeString);
+		if (isNaN(date.getTime())) return 'N/A';
+
+		const year = date.getUTCFullYear();
+		const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+		const day = String(date.getUTCDate()).padStart(2, '0');
+		const hours = String(date.getUTCHours()).padStart(2, '0');
+		const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	};
 
 	return (
 		<div className="execution-log-dashboard">
@@ -409,6 +440,7 @@ function ExecutionLogDashboard() {
 						<button
 							onClick={() => setPage(p => Math.max(1, p - 1))}
 							disabled={page === 1 || loading}
+							className="pagination-btn"
 						>
 							Previous
 						</button>
@@ -416,6 +448,7 @@ function ExecutionLogDashboard() {
 						<button
 							onClick={() => setPage(p => Math.min(totalPages, p + 1))}
 							disabled={page === totalPages || loading}
+							className="pagination-btn"
 						>
 							Next
 						</button>
@@ -454,9 +487,9 @@ function ExecutionLogDashboard() {
 										</span>
 									</td>
 									<td>{log[4]}</td>
-									<td>{log[5] ? new Date(log[5]).toLocaleDateString() : 'N/A'}</td>
-									<td>{log[8] ? new Date(log[8]).toLocaleString() : 'N/A'}</td>
-									<td>{log[9] ? new Date(log[9]).toLocaleString() : 'N/A'}</td>
+									<td>{log[5] ? formatDateTime(log[5]) : 'N/A'}</td>
+									<td>{log[8] ? formatDateTime(log[8]) : 'N/A'}</td>
+									<td>{log[9] ? formatDateTime(log[9]) : 'N/A'}</td>
 									<td>{calculateDuration(log[8], log[9])}</td>
 									<td>{log[11] || 0}</td>
 									<td className="error-message-cell">
@@ -486,50 +519,60 @@ function ExecutionLogDashboard() {
 			</div>
 
 			{/* Status Change Modal */}
-			{
-				selectedLog && (
-					<div className="modal-overlay">
-						<div className="modal-content">
-							<h3>Change Status for Pipeline: {selectedLog[2]}</h3>
-							<p>Current Status: <strong>{selectedLog[3]}</strong></p>
-							<div className="status-selector">
-								<label>New Status:</label>
-								<select
-									value={newStatus}
-									onChange={(e) => setNewStatus(e.target.value)}
-								>
-									<option value="">Select Status</option>
-									{statusOptions.map(status => (
-										<option key={status} value={status}>{status}</option>
-									))}
-								</select>
-							</div>
-							<div className="modal-actions">
-								<button onClick={changeLogStatus} disabled={!newStatus || loading}>
-									Update Status
-								</button>
-								<button onClick={() => setSelectedLog(null)} className="secondary">
-									Cancel
-								</button>
-							</div>
+			{selectedLog && (
+				<div className="modal-overlay">
+					<div className="modal-content status-modal">
+						<h3>Change Status for Pipeline: {selectedLog[2]}</h3>
+						<p>Current Status: <strong>{selectedLog[3]}</strong></p>
+						<div className="status-selector">
+							<label>New Status:</label>
+							<select
+								value={newStatus}
+								onChange={(e) => setNewStatus(e.target.value)}
+								className="status-select"
+							>
+								<option value="">Select Status</option>
+								{statusOptions.map(status => (
+									<option key={status} value={status}>{status}</option>
+								))}
+							</select>
+						</div>
+						<div className="modal-actions">
+							<button onClick={changeLogStatus} disabled={!newStatus || loading} className="primary-btn">
+								Update Status
+							</button>
+							<button onClick={() => setSelectedLog(null)} className="secondary-btn">
+								Cancel
+							</button>
 						</div>
 					</div>
-				)
-			}
+				</div>
+			)}
 
 			{/* Pipeline Dependency Check Section */}
 			<div className="dependency-check-section">
 				<h2>Pipeline Dependency Check</h2>
-				<div className="pipeline-search">
-					<input
-						type="text"
-						placeholder="Search pipeline by name..."
-						value={pipelineSearch}
-						onChange={(e) => setPipelineSearch(e.target.value)}
-					/>
-					<button onClick={searchPipelines} disabled={loading}>
-						Search Pipelines
-					</button>
+				<div className="dependency-controls">
+					<div className="pipeline-search">
+						<input
+							type="text"
+							placeholder="Search pipeline by name..."
+							value={pipelineSearch}
+							onChange={(e) => setPipelineSearch(e.target.value)}
+						/>
+						<button onClick={searchPipelines} disabled={loading}>
+							Search Pipelines
+						</button>
+					</div>
+
+					<div className="extract-date-selector">
+						<label>Extract Date:</label>
+						<input
+							type="date"
+							value={extractDate}
+							onChange={(e) => setExtractDate(e.target.value)}
+						/>
+					</div>
 				</div>
 
 				{pipelineResults.length > 0 && (
@@ -562,26 +605,20 @@ function ExecutionLogDashboard() {
 					<div className="dependency-results">
 						<h3>Dependency Execution Status</h3>
 						<div className="dependency-table-container">
-							<table className="dependency-table">
+							<table className="dependency-table logs-table">
 								<thead>
 									<tr>
-										<th>Pipeline ID</th>
+										<th>Dependant Pipeline ID</th>
 										<th>Pipeline Name</th>
-										<th>Dependency Level</th>
-										<th>Execution Status</th>
 										<th>Status</th>
-										<th>Last Execution</th>
 									</tr>
 								</thead>
 								<tbody>
 									{dependencyCheckResults.map((result, index) => (
-										<tr key={index} className={result[4] === 'Not Executed' ? 'not-executed' : ''}>
+										<tr key={index} className="not-executed">
 											<td>{result[0]}</td>
 											<td>{result[1]}</td>
-											<td>{result[2]}</td>
-											<td>{result[4]}</td>
-											<td>{result[5] || 'N/A'}</td>
-											<td>{result[6] ? new Date(result[6]).toLocaleString() : 'N/A'}</td>
+											<td>Not Executed</td>
 										</tr>
 									))}
 								</tbody>
@@ -595,7 +632,7 @@ function ExecutionLogDashboard() {
 			<div className="queue-section">
 				<h2>Execution Queue</h2>
 
-				{/* Queue Filters - Same style as execution log */}
+				{/* Queue Filters */}
 				<div className="filters-section">
 					<h3>Queue Filters</h3>
 					<div className="filters-grid">
@@ -626,21 +663,6 @@ function ExecutionLogDashboard() {
 							/>
 						</div>
 
-						<div className="filter-group">
-							<label>Status:</label>
-							<div className="status-checkboxes">
-								{queueStatusOptions.map(status => (
-									<label key={status} className="checkbox-label">
-										<input
-											type="checkbox"
-											checked={queueFilters.queue_status.includes(status)}
-											onChange={() => handleQueueStatusChange(status)}
-										/>
-										{status}
-									</label>
-								))}
-							</div>
-						</div>
 						<div className="filter-group">
 							<label>Status:</label>
 							<select
@@ -683,59 +705,68 @@ function ExecutionLogDashboard() {
 					</div>
 
 					<div className="filter-actions">
-						<button onClick={fetchExecutionQueue} disabled={loading}>
+						<button onClick={handleApplyQueueFilters} disabled={loading}>
 							Apply Queue Filters
 						</button>
-						<button onClick={() => {
-							setQueueFilters({
-								queue_id: '',
-								pipeline_id: '',
-								pipeline_name: '',
-								queue_status: ['Queued', 'Processing'],
-								date_last_modified: '',
-								extract_date: '',
-								date_of_insert: ''
-							});
-						}} className="secondary">
+						<button onClick={handleClearQueueFilters} className="secondary">
 							Clear Queue Filters
 						</button>
 					</div>
 				</div>
-				<div className="queue-table-container">
-					<table className="queue-table">
-						<thead>
-							<tr>
-								<th>Queue ID</th>
-								<th>Pipeline ID</th>
-								<th>Pipeline Name</th>
-								<th>Status</th>
-								<th>Last Modified</th>
-								<th>Extract Date</th>
-								<th>Queued At</th>
-							</tr>
-						</thead>
-						<tbody>
-							{queue.map((item, index) => (
-								<tr key={index} className={`queue-status-${item[3]?.toLowerCase()}`}>
-									<td>{item[0]}</td>
-									<td>{item[1]}</td>
-									<td>{item[2]}</td>
-									<td>
-										<span className={`status-badge status-${item[3]?.toLowerCase()}`}>
-											{item[3]}
-										</span>
-									</td>
-									<td>{item[4] ? new Date(item[4]).toLocaleString() : 'N/A'}</td>
-									<td>{item[5] ? new Date(item[5]).toLocaleDateString() : 'N/A'}</td>
-									<td>{item[6] ? new Date(item[6]).toLocaleString() : 'N/A'}</td>
+
+				{/* Queue Results */}
+				<div className="results-section">
+					<div className="results-header">
+						<h3>Execution Queue ({queue.length} records)</h3>
+					</div>
+
+					<div className="queue-table-container logs-table-container">
+						<table className="logs-table">
+							<thead>
+								<tr>
+									<th>Queue ID</th>
+									<th>Pipeline ID</th>
+									<th>Pipeline Name</th>
+									<th>Status</th>
+									<th>Last Modified</th>
+									<th>Extract Date</th>
+									<th>Queued At</th>
+									<th>Custom Params</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
-					{queue.length === 0 && <div className="no-results">No pipelines in queue</div>}
+							</thead>
+							<tbody>
+								{queue.map((item, index) => (
+									<tr key={index} className={`status-${item[3]?.toLowerCase()}`}>
+										<td>{item[0]}</td>
+										<td>{item[1]}</td>
+										<td className="pipeline-name">{item[2]}</td>
+										<td>
+											<span className={`status-badge status-${item[3]?.toLowerCase()}`}>
+												{item[3]}
+											</span>
+										</td>
+										<td>{item[4] ? formatDateTime(item[4]) : 'N/A'}</td>
+										<td>{item[5] ? formatDateTime(item[5]) : 'N/A'}</td>
+										<td>{item[6] ? formatDateTime(item[6]) : 'N/A'}</td>
+										<td className="error-message-cell">
+											{item[7] ? (
+												<span className="error-tooltip" title={item[7]}>
+													{item[7].length > 50 ? `${item[7].substring(0, 50)}...` : item[7]}
+												</span>
+											) : 'N/A'}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+
+					{queue.length === 0 && !loading && (
+						<div className="no-results">No pipelines in queue</div>
+					)}
 				</div>
 			</div>
-		</div >
+		</div>
 	);
 }
 

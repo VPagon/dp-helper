@@ -113,6 +113,20 @@ function HomePage() {
               <h3>SQLDB-KUP-APP DEV-PROD MIGRATION</h3>
               <p>Migrate keeping up data from dev to prod server</p>
             </Link>
+            <Link to="/metadaterium" className="tool-card">
+              <h3>Metadaterium</h3>
+              <p>Load data throuhm metadaterium framework</p>
+            </Link>
+          </div>
+        </div>
+
+        <div className="category-card">
+          <h2>Local database</h2>
+          <div className="tool-list">
+            <Link to="/local-database-manager" className="tool-card">
+              <h3>CRUD</h3>
+              <p>Manage local database</p>
+            </Link>
           </div>
         </div>
       </div>

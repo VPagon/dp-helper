@@ -191,6 +191,9 @@ function PipelineAnalysisPage() {
     const fetchTableDetails = async (tableId) => {
         try {
             setLoading(true);
+            setError(null);
+
+            console.log('Fetching table details for ID:', tableId);
 
             // Get table details
             const tableResult = await executeQuery(
@@ -198,16 +201,30 @@ function PipelineAnalysisPage() {
                 `SELECT * FROM rep_mda.mda_dle_tables WHERE id = ${tableId}`
             );
 
+            console.log('Table result:', tableResult);
+
             // Get table columns
             const columnsResult = await executeQuery(
                 environment,
                 `SELECT * FROM rep_mda.mda_dle_columns WHERE dle_tbe_id = ${tableId} ORDER BY position`
             );
 
-            setTableDetails(tableResult.rows[0]);
-            setTableColumns(columnsResult.rows);
+            console.log('Columns result:', columnsResult);
+
+            if (tableResult.rows && tableResult.rows.length > 0) {
+                setTableDetails(tableResult.rows[0]);
+            } else {
+                setError('No table found with the specified ID');
+            }
+
+            if (columnsResult.rows && columnsResult.rows.length > 0) {
+                setTableColumns(columnsResult.rows);
+            } else {
+                setTableColumns([]);
+            }
 
         } catch (err) {
+            console.error('Error fetching table details:', err);
             setError(`Failed to fetch table details: ${err.message}`);
         } finally {
             setLoading(false);
@@ -215,18 +232,27 @@ function PipelineAnalysisPage() {
     };
 
     // Handle right-click on table IDs
+    // Handle right-click on table IDs
     const handleTableIdRightClick = async (e, tableId, tableType) => {
         e.preventDefault();
 
-        if (!tableId) return;
+        if (!tableId) {
+            setError('Table ID is missing');
+            return;
+        }
+
+        console.log('Right-click on table ID:', tableId, 'Type:', tableType);
 
         setTableInfoPopup({
             visible: true,
-            x: e.clientX,
-            y: e.clientY,
             tableId: tableId,
             tableType: tableType
         });
+
+        // Reset previous data
+        setTableDetails(null);
+        setTableColumns(null);
+        setError(null);
 
         await fetchTableDetails(tableId);
     };
@@ -324,7 +350,7 @@ function PipelineAnalysisPage() {
                                     <h3>Basic Information</h3>
                                     <div className="info-grid">
                                         <div className="info-item">
-                                            <strong>ID:</strong> {pipelineDetails.pipeline[0]}
+                                            <strong>Pipeline ID:</strong> {pipelineDetails.pipeline[0]}
                                         </div>
                                         <div className="info-item">
                                             <strong>Status:</strong>
@@ -340,6 +366,12 @@ function PipelineAnalysisPage() {
                                         </div>
                                         <div className="info-item">
                                             <strong>Owner:</strong> {pipelineDetails.pipeline[5]}
+                                        </div>
+                                        <div className="info-item">
+                                            <strong>Load Category:</strong> {pipelineDetails.pipeline[19]}
+                                        </div>
+                                        <div className="info-item">
+                                            <strong>Pipeline Priority:</strong> {pipelineDetails.pipeline[20]}
                                         </div>
                                     </div>
                                 </div>
@@ -368,7 +400,7 @@ function PipelineAnalysisPage() {
                                     <div className="detail-section full-width">
                                         <h3>DLE Job Information</h3>
                                         {pipelineDetails.dleJobs.length > 0 ? (
-                                            <div className="info-grid">
+                                            <div className="dle-jobs-container">
                                                 {pipelineDetails.dleJobs.map((job, index) => (
                                                     <div key={index} className="job-section">
                                                         <h4>DLE Job: {job[3]}</h4>
@@ -400,16 +432,32 @@ function PipelineAnalysisPage() {
                                                                 <strong>Job Type:</strong> {job[4]}
                                                             </div>
                                                             <div className="info-item">
-                                                                <strong>Load Type:</strong> {job[10]}
+                                                                <strong>Filter:</strong>
+                                                                <div className="script-content">
+                                                                    {job[7] || 'N/A'}
+                                                                </div>
+                                                            </div>
+                                                            <div className="info-item full-width-item">
+                                                                <strong>Script:</strong>
+                                                                <div className="script-content">
+                                                                    {job[8] || 'N/A'}
+                                                                </div>
                                                             </div>
                                                             <div className="info-item">
-                                                                <strong>Active:</strong> {job[20] === 1 ? 'Yes' : 'No'}
+                                                                <strong>Load type:</strong> {job[9]}
                                                             </div>
-                                                            {job[8] && (
-                                                                <div className="info-item">
-                                                                    <strong>Filter:</strong> {job[8]}
-                                                                </div>
-                                                            )}
+                                                            <div className="info-item">
+                                                                <strong>Check Source Deleted Records:</strong> {job[10]}
+                                                            </div>
+                                                            <div className="info-item">
+                                                                <strong>GLD Delete Non Existing Records:</strong> {job[11]}
+                                                            </div>
+                                                            <div className="info-item">
+                                                                <strong>Active:</strong>
+                                                                <span className={`status ${job[20] === 1 ? 'active' : 'inactive'}`}>
+                                                                    {job[20] === 1 ? 'Yes' : 'No'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -538,27 +586,6 @@ function PipelineAnalysisPage() {
                                 </div>
                             </div>
 
-                            {/* Schedule & Ownership Row */}
-                            <div className="detail-row">
-                                <div className="detail-section full-width">
-                                    <h3>Schedule & Ownership</h3>
-                                    <div className="info-grid">
-                                        <div className="info-item">
-                                            <strong>Load Category:</strong> {pipelineDetails.pipeline[19]}
-                                        </div>
-                                        <div className="info-item">
-                                            <strong>Priority:</strong> {pipelineDetails.pipeline[20]}
-                                        </div>
-                                        <div className="info-item">
-                                            <strong>Batch Type:</strong> {pipelineDetails.pipeline[8]}
-                                        </div>
-                                        <div className="info-item">
-                                            <strong>Multiple Loads:</strong> {pipelineDetails.pipeline[12] === 1 ? 'Yes' : 'No'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Execution History Row */}
                             <div className="detail-row">
                                 <div className="detail-section full-width">
@@ -601,81 +628,88 @@ function PipelineAnalysisPage() {
             </div>
             {/* Table Info Popup */}
             {tableInfoPopup?.visible && (
-                <div
-                    className="table-info-popup"
-                    style={{
-                        position: 'fixed',
-                        left: `${Math.min(tableInfoPopup.x, window.innerWidth - 600)}px`,
-                        top: `${Math.min(tableInfoPopup.y, window.innerHeight - 400)}px`,
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="popup-header">
-                        <h3>Table Details: {tableInfoPopup.tableType.toUpperCase()} Table ID {tableInfoPopup.tableId}</h3>
-                        <button className="close-popup-btn" onClick={closeTableInfoPopup}>×</button>
-                    </div>
+                <>
+                    <div className="popup-overlay" onClick={closeTableInfoPopup} />
+                    <div
+                        className="table-info-popup"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="popup-header">
+                            <h3>Table Details: {tableInfoPopup.tableType.toUpperCase()} Table ID {tableInfoPopup.tableId}</h3>
+                            <button className="close-popup-btn" onClick={closeTableInfoPopup}>×</button>
+                        </div>
 
-                    {loading ? (
-                        <div className="popup-loading">Loading table details...</div>
-                    ) : error ? (
-                        <div className="popup-error">{error}</div>
-                    ) : tableDetails ? (
-                        <div className="table-details-content">
-                            {/* Table Information */}
-                            <div className="table-info-section">
-                                <h4>Table Information</h4>
-                                <div className="table-info-grid">
-                                    <div><strong>Zone:</strong> {tableDetails[1]}</div>
-                                    <div><strong>Schema:</strong> {tableDetails[2]}</div>
-                                    <div><strong>Table Name:</strong> {tableDetails[3]}</div>
-                                    <div><strong>Directory:</strong> {tableDetails[4]}</div>
-                                    <div><strong>Alias:</strong> {tableDetails[5]}</div>
-                                    <div><strong>Partition Format:</strong> {tableDetails[6]}</div>
-                                    <div><strong>Table Type:</strong> {tableDetails[7]}</div>
-                                    <div><strong>Active:</strong> {tableDetails[8] ? 'Yes' : 'No'}</div>
-                                    <div><strong>Key:</strong> {tableDetails[15]}</div>
-                                </div>
-                            </div>
-
-                            {/* Table Columns */}
-                            {tableColumns && tableColumns.length > 0 && (
-                                <div className="columns-section">
-                                    <h4>Columns ({tableColumns.length})</h4>
-                                    <div className="columns-table">
-                                        <div className="columns-header">
-                                            <span>Table ID</span>
-                                            <span>Name</span>
-                                            <span>Position</span>
-                                            <span>Business Key</span>
-                                            <span>Is Hash</span>
-                                            <span>Is Audit</span>
-                                            <span>Is Active</span>
-                                            <span>Mapping</span>
-                                        </div>
-                                        {tableColumns.map((column, index) => (
-                                            <div key={index} className="column-row">
-                                                <span>{column[1]}</span>
-                                                <span>{column[2]}</span>
-                                                <span>{column[4]}</span>
-                                                <span>{column[5] ? '1' : '0'}</span>
-                                                <span>{column[6] ? '1' : '0'}</span>
-                                                <span>{column[7] ? '1' : '0'}</span>
-                                                <span>{column[8] ? '1' : '0'}</span>
-                                                <span>{column[12]}</span>
+                        {loading ? (
+                            <div className="popup-loading">Loading table details...</div>
+                        ) : error ? (
+                            <div className="popup-error">{error}</div>
+                        ) : tableDetails ? (
+                            <div className="table-details-content">
+                                {/* Table Information */}
+                                <div className="table-info-section">
+                                    <h4>Table Information</h4>
+                                    <div className="table-info-grid">
+                                        <div><strong>ID:</strong> {tableDetails[0]}</div>
+                                        <div><strong>Zone:</strong> {tableDetails[1] || 'N/A'}</div>
+                                        <div><strong>Schema:</strong> {tableDetails[2] || 'N/A'}</div>
+                                        <div className="long-content-field">
+                                            <strong>Table Name:</strong>
+                                            <div className="scrollable-content">
+                                                {tableDetails[3] || 'N/A'}
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div className="long-content-field">
+                                            <strong>Directory:</strong>
+                                            <div className="scrollable-content">
+                                                {tableDetails[4] || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div><strong>Alias:</strong> {tableDetails[5] || 'N/A'}</div>
+                                        <div><strong>Partition Format:</strong> {tableDetails[6] || 'N/A'}</div>
+                                        <div><strong>Table Type:</strong> {tableDetails[7] || 'N/A'}</div>
+                                        <div><strong>Active:</strong> {tableDetails[8] ? 'Yes' : 'No'}</div>
+                                        <div><strong>Key:</strong> {tableDetails[15] || 'N/A'}</div>
                                     </div>
                                 </div>
-                            )}
 
-                            {(!tableColumns || tableColumns.length === 0) && (
-                                <div className="no-columns">No columns found for this table</div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="no-table-data">No table details available</div>
-                    )}
-                </div>
+                                {/* Table Columns */}
+                                {tableColumns && tableColumns.length > 0 ? (
+                                    <div className="columns-section">
+                                        <h4>Columns ({tableColumns.length})</h4>
+                                        <div className="columns-table">
+                                            <div className="columns-header">
+                                                <span>Table ID</span>
+                                                <span>Name</span>
+                                                <span>Position</span>
+                                                <span>Business Key</span>
+                                                <span>Is Hash</span>
+                                                <span>Is Audit</span>
+                                                <span>Is Active</span>
+                                                <span>Mapping</span>
+                                            </div>
+                                            {tableColumns.map((column, index) => (
+                                                <div key={index} className="column-row">
+                                                    <span>{column[1] || 'N/A'}</span>
+                                                    <span>{column[2] || 'N/A'}</span>
+                                                    <span>{column[4] || 'N/A'}</span>
+                                                    <span>{column[5] ? 'Yes' : 'No'}</span>
+                                                    <span>{column[6] ? 'Yes' : 'No'}</span>
+                                                    <span>{column[7] ? 'Yes' : 'No'}</span>
+                                                    <span>{column[8] ? 'Yes' : 'No'}</span>
+                                                    <span>{column[12] || 'N/A'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="no-columns">No columns found for this table</div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="no-table-data">No table details available</div>
+                        )}
+                    </div>
+                </>
             )}
 
             {/* Close popup when clicking outside */}
