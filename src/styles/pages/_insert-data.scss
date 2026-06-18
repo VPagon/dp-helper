@@ -1,64 +1,53 @@
 .insert-data-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.input-section {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group textarea {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: monospace;
+  max-width: none;
+  margin-inline: 0;
+  padding: var(--space-lg) var(--page-padding-inline);
+  box-sizing: border-box;
 }
 
-.form-group textarea {
+.insert-data-page .input-section {
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.insert-data-page .form-group {
+  margin-bottom: var(--space-md);
+}
+
+.insert-data-page .form-group label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.insert-data-page .form-group input,
+.insert-data-page .form-group textarea {
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+.insert-data-page .form-group textarea {
   min-height: 150px;
 }
 
-button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
+.insert-data-page .output-section {
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
 }
 
-button:hover {
-  background-color: #45a049;
-}
-
-.output-section {
-  background-color: #f0f0f0;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.sql-output {
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 4px;
+.insert-data-page .sql-output {
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
   overflow-x: auto;
   white-space: pre-wrap;
-  margin-bottom: 15px;
+  margin-bottom: var(--space-md);
 }

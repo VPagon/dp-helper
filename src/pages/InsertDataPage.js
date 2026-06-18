@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import '../styles/pages/_insert-data.scss';
 import HomeButton from '../components/common/HomeButtom';
+import { logGeneratedQuery } from '../services/queryHistoryLogger';
+import { detectSqlOperation } from '../utils/queryReverse';
 
 function InsertDataPage() {
   const [tableName, setTableName] = useState('');
@@ -38,11 +39,11 @@ function InsertDataPage() {
       setGeneratedSQL(['Error: Input must have at least 2 lines (header + data)']);
       return;
     }
-    
+
     const originalHeaders = lines[0].split('\t').map(h => h.trim());
     const includedIndices = [];
     const headers = [];
-    
+
     for (let i = 0; i < originalHeaders.length; i++) {
       const header = originalHeaders[i].toLowerCase();
       if (!EXCLUDED_COLUMNS.has(header)) {
@@ -50,23 +51,59 @@ function InsertDataPage() {
         includedIndices.push(i);
       }
     }
-    
+
+    if (headers.length === 0) {
+      setGeneratedSQL(['Error: No columns to insert after excluded columns filter']);
+      return;
+    }
+
     const results = [];
-    
+
     for (let j = 1; j < lines.length; j++) {
       const values = lines[j].split('\t').map(v => v.trim());
       if (values.length !== originalHeaders.length) continue;
-      
+
       const filteredValues = includedIndices.map(i => values[i]);
       const formattedValues = filteredValues.map(formatSqlValue);
-      
+
       const columnsStr = headers.join(',\n\t');
       const valuesStr = formattedValues.join(',\n\t');
-      
+
       results.push(`INSERT INTO ${tableName} (\n\t${columnsStr}) \nVALUES (\n\t${valuesStr});`);
     }
-    
+
+    if (results.length === 0) {
+      setGeneratedSQL(['Error: No valid data rows found']);
+      return;
+    }
+
     setGeneratedSQL(results);
+    const sql = results.join('\n\n');
+    logGeneratedQuery({
+      source: 'insert-data',
+      environment: 'dev',
+      sql,
+      metadata: {
+        operation: 'INSERT',
+        tableName: tableName.trim(),
+      },
+    }).catch(() => {});
+  };
+
+  const logCopy = () => {
+    const copyText = generatedSQL.join('\n\n');
+    if (generatedSQL.length > 0 && !generatedSQL[0].startsWith('Error:')) {
+      logGeneratedQuery({
+        source: 'insert-data',
+        environment: 'dev',
+        sql: copyText,
+        metadata: {
+          operation: detectSqlOperation(copyText),
+          tableName: tableName.trim(),
+        },
+      }).catch(() => {});
+    }
+    navigator.clipboard.writeText(copyText);
   };
 
   return (
@@ -102,7 +139,7 @@ function InsertDataPage() {
               <pre key={index}>{sql}</pre>
             ))}
           </div>
-          <button onClick={() => navigator.clipboard.writeText(generatedSQL.join('\n\n'))}>
+          <button onClick={logCopy}>
             Copy to Clipboard
           </button>
         </div>
