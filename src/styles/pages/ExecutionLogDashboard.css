@@ -1,13 +1,179 @@
 /* Remove automatic data loading on page load */
+.execution-log-dashboard {
+  max-width: 2600px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--page-padding-inline);
+}
+
 .execution-log-dashboard .results-section {
   display: block;
+}
+
+/* —— Execution logs & queue tables —— */
+.execution-log-dashboard .logs-table-container,
+.execution-log-dashboard .queue-table-container {
+  overflow-x: auto;
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.execution-log-dashboard .logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.execution-log-dashboard .logs-table thead th {
+  background-color: var(--color-surface);
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  box-shadow: 0 1px 3px var(--shadow-sm);
+  vertical-align: middle;
+}
+
+/* Override global .app table cell borders / zebra striping — body cells only */
+.execution-log-dashboard .logs-table td {
+  padding: 0.625rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text);
+  vertical-align: middle;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.execution-log-dashboard .logs-table tbody tr:nth-child(even) td {
+  background-color: transparent;
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row:hover {
+  filter: brightness(0.97);
+}
+
+html[data-theme='dark'] .execution-log-dashboard .logs-table tbody tr.log-row:hover {
+  filter: brightness(1.08);
+}
+
+.execution-log-dashboard .logs-table td.pipeline-name {
+  vertical-align: middle;
+  font-weight: 500;
+  color: var(--color-text-heading);
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  outline: none;
+  box-shadow: none;
+}
+
+.execution-log-dashboard .logs-table td.status-cell {
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* Subtle row tints on <tr> only — cells stay transparent */
+.execution-log-dashboard .logs-table tbody tr.log-row--succeeded {
+  background-color: var(--status-succeeded-row);
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row--in-progress {
+  background-color: var(--status-in-progress-row);
+  box-shadow: inset 3px 0 0 var(--status-in-progress-border);
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row--failed {
+  background-color: var(--status-failed-row);
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row--cancelled {
+  background-color: var(--status-cancelled-row);
+}
+
+/* Queue row tints (Cancelled reuses log-row--cancelled above) */
+.execution-log-dashboard .logs-table tbody tr.log-row--ready {
+  background-color: var(--status-queue-ready-row);
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row--finished {
+  background-color: var(--status-queue-finished-row);
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row--blocked {
+  background-color: var(--status-queue-blocked-row);
+}
+
+.execution-log-dashboard .logs-table tbody tr.log-row--fired {
+  background-color: var(--status-queue-fired-row);
+}
+
+/* Status pills (execution log + queue) — scoped under .logs-table */
+.execution-log-dashboard .logs-table .status-badge {
+  display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  vertical-align: middle;
+}
+
+.execution-log-dashboard .logs-table .status-badge.status-succeeded {
+  background-color: var(--status-succeeded-bg);
+  color: var(--status-succeeded-text);
+  border-color: var(--status-succeeded-border);
+}
+
+.execution-log-dashboard .logs-table .status-badge.status-in-progress {
+  background-color: var(--status-in-progress-bg);
+  color: var(--status-in-progress-text);
+  border-color: var(--status-in-progress-border);
+}
+
+.execution-log-dashboard .logs-table .status-badge.status-failed {
+  background-color: var(--status-failed-bg);
+  color: var(--status-failed-text);
+  border-color: var(--status-failed-border);
+}
+
+.execution-log-dashboard .logs-table .status-badge.status-cancelled {
+  background-color: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+  border-color: var(--status-cancelled-border);
+}
+
+.execution-log-dashboard .error-message-cell {
+  max-width: 220px;
+  font-size: 0.875rem;
+}
+
+.execution-log-dashboard .error-tooltip {
+  cursor: help;
+  border-bottom: 1px dotted var(--color-text-muted);
+  color: var(--color-text);
 }
 
 /* Fix pagination button visibility */
 .pagination-btn {
   padding: 8px 16px !important;
-  background-color: #007bff !important;
-  color: white !important;
+  background-color: var(--color-primary) !important;
+  color: var(--color-surface) !important;
   border: none !important;
   border-radius: 4px !important;
   cursor: pointer !important;
@@ -16,13 +182,13 @@
 }
 
 .pagination-btn:disabled {
-  background-color: #6c757d !important;
+  background-color: var(--color-secondary) !important;
   cursor: not-allowed !important;
   opacity: 0.6 !important;
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background-color: #0056b3 !important;
+  background-color: var(--color-primary-hover) !important;
 }
 
 /* Improved status modal styling */
@@ -38,7 +204,7 @@
 .status-modal .status-select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 14px;
 }
@@ -51,8 +217,8 @@
 }
 
 .primary-btn {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
@@ -60,13 +226,13 @@
 }
 
 .primary-btn:disabled {
-  background-color: #6c757d;
+  background-color: var(--color-secondary);
   cursor: not-allowed;
 }
 
 .secondary-btn {
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--color-secondary);
+  color: var(--color-surface);
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
@@ -94,7 +260,7 @@
 
 .extract-date-selector input {
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 }
 
@@ -106,44 +272,44 @@
 
 .pipeline-search input {
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   min-width: 250px;
 }
 
-/* Queue section improvements */
+/* Queue section */
 .queue-section .results-section {
   margin-top: 20px;
 }
 
-.queue-table-container {
-  overflow-x: auto;
+.execution-log-dashboard .logs-table .status-badge.status-ready {
+  background-color: var(--status-queue-ready-bg);
+  color: var(--status-queue-ready-text);
+  border-color: var(--status-succeeded-border);
 }
 
-/* Status badges for queue */
-.status-ready {
-  background-color: #d4edda;
-  color: #155724;
+.execution-log-dashboard .logs-table .status-badge.status-finished {
+  background-color: var(--status-queue-finished-bg);
+  color: var(--status-queue-finished-text);
+  border-color: var(--color-info-border);
 }
 
-.status-finished {
-  background-color: #cce7ff;
-  color: #004085;
+.execution-log-dashboard .logs-table .status-badge.status-blocked {
+  background-color: var(--status-queue-blocked-bg);
+  color: var(--status-queue-blocked-text);
+  border-color: var(--status-failed-border);
 }
 
-.status-blocked {
-  background-color: #f8d7da;
-  color: #721c24;
+.execution-log-dashboard .logs-table .status-badge.status-cancelled {
+  background-color: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+  border-color: var(--status-cancelled-border);
 }
 
-.status-cancelled {
-  background-color: #e2e3e5;
-  color: #383d41;
-}
-
-.status-fired {
-  background-color: #fff3cd;
-  color: #856404;
+.execution-log-dashboard .logs-table .status-badge.status-fired {
+  background-color: var(--status-queue-fired-bg);
+  color: var(--status-queue-fired-text);
+  border-color: var(--status-queue-fired-border);
 }
 
 /* Dependency results */
@@ -159,7 +325,7 @@
 }
 
 .dependency-table th {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-muted);
   padding: 10px;
   text-align: left;
   font-weight: bold;
@@ -169,11 +335,15 @@
 
 .dependency-table td {
   padding: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .not-executed {
-  background-color: #fff3cd;
+  background-color: var(--status-in-progress-row);
+}
+
+.not-executed td {
+  color: var(--color-text);
 }
 
 /* Pipeline list */
@@ -186,20 +356,20 @@
 
 .pipeline-item {
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .pipeline-item:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-muted);
 }
 
 .pipeline-item.selected {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary);
 }
 
 /* Modal overlay */
@@ -209,7 +379,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -217,10 +387,10 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--color-surface);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-sm);
   max-width: 90%;
   max-height: 90%;
   overflow-y: auto;

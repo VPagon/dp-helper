@@ -30,6 +30,7 @@ function ExecutionLogDashboard() {
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(50);
 	const [totalCount, setTotalCount] = useState(0);
+	const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 	const [selectedLog, setSelectedLog] = useState(null);
 	const [newStatus, setNewStatus] = useState('');
 	const [pipelineSearch, setPipelineSearch] = useState('');
@@ -40,6 +41,30 @@ function ExecutionLogDashboard() {
 
 	const statusOptions = ['Succeeded', 'In Progress', 'Failed', 'Cancelled'];
 	const queueStatusOptions = ['Blocked', 'Cancelled', 'Finished', 'Ready', 'Fired'];
+
+	const toStatusClass = (status) => {
+		if (!status) return '';
+		return status.toLowerCase().replace(/\s+/g, '-');
+	};
+
+	/** Queue statuses (Ready, Finished, Blocked, Cancelled, Fired) → log-row--* / status-* classes */
+	const toQueueStatusClass = (queueStatus) => toStatusClass(queueStatus);
+
+	const formatDateTimeForSql = (dateTimeLocal) => {
+		if (!dateTimeLocal?.trim()) return '';
+
+		const normalized = dateTimeLocal.trim().replace('T', ' ');
+
+		if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(normalized)) {
+			return `${normalized}:00.000`;
+		}
+
+		if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(normalized)) {
+			return `${normalized}.000`;
+		}
+
+		return normalized;
+	};
 
 	const fetchExecutionLogs = async () => {
 		try {
@@ -54,8 +79,12 @@ function ExecutionLogDashboard() {
 			if (filters.pipeline_name) whereConditions.push(`pipeline_name LIKE '%${filters.pipeline_name}%'`);
 			if (filters.pipeline_status) whereConditions.push(`pipeline_status = '${filters.pipeline_status}'`);
 			if (filters.extract_date) whereConditions.push(`extract_date >= '${filters.extract_date} 00:00:00' and extract_date <= '${filters.extract_date} 23:59:59'`);
-			if (filters.start_date_time) whereConditions.push(`start_date_time >= '${filters.start_date_time}'`);
-			if (filters.end_date_time) whereConditions.push(`end_date_time <= '${filters.end_date_time}'`);
+			if (filters.start_date_time) {
+				whereConditions.push(`start_date_time >= '${formatDateTimeForSql(filters.start_date_time)}'`);
+			}
+			if (filters.end_date_time) {
+				whereConditions.push(`end_date_time <= '${formatDateTimeForSql(filters.end_date_time)}'`);
+			}
 
 			if (whereConditions.length > 0) {
 				whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -66,7 +95,7 @@ function ExecutionLogDashboard() {
 				environment,
 				`SELECT COUNT(*) as total FROM rep_mda.mda_ocn_execution_log ${whereClause}`
 			);
-			setTotalCount(countResult.rows[0][0]);
+			setTotalCount(Number(countResult.rows[0]?.[0]) || 0);
 
 			// Get logs with pagination
 			const offset = (page - 1) * pageSize;
@@ -111,7 +140,7 @@ function ExecutionLogDashboard() {
 			}
 
 			if (queueFilters.date_last_modified) {
-				whereConditions.push(`date_last_modified >= '${queueFilters.date_last_modified}'`);
+				whereConditions.push(`date_last_modified >= '${formatDateTimeForSql(queueFilters.date_last_modified)}'`);
 			}
 
 			if (queueFilters.extract_date) {
@@ -119,7 +148,7 @@ function ExecutionLogDashboard() {
 			}
 
 			if (queueFilters.date_of_insert) {
-				whereConditions.push(`date_of_insert >= '${queueFilters.date_of_insert}'`);
+				whereConditions.push(`date_of_insert >= '${formatDateTimeForSql(queueFilters.date_of_insert)}'`);
 			}
 
 			const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -195,6 +224,11 @@ function ExecutionLogDashboard() {
 		}
 	};
 
+	const dependencyDisplayStatus = (pipelineStatus) => {
+		if (!pipelineStatus) return 'Not executed';
+		return pipelineStatus;
+	};
+
 	const checkDependencies = async () => {
 		if (!selectedPipeline) {
 			setError('Please select a pipeline first');
@@ -203,15 +237,29 @@ function ExecutionLogDashboard() {
 
 		try {
 			setLoading(true);
+			setError(null);
+			const pipelineId = selectedPipeline[0];
 			const result = await executeQuery(
 				environment,
-				`declare @extract_date datetime 
-				set @extract_date = '${extractDate} 00:00:00.000'
-				select pd.dependant_pipeline_id, p.pipeline_name, * from rep_mda.mda_ocn_pipeline_dependencies pd 
-				left join rep_mda.mda_ocn_execution_log el on el.extract_date=@extract_date and pd.dependant_pipeline_id=el.pipeline_id
-				left join rep_mda.mda_ocn_pipelines p on pd.dependant_pipeline_id=p.pipeline_id 
-				where pd.pipeline_id=(select pipeline_id from rep_mda.mda_ocn_pipelines where pipeline_name = '${selectedPipeline[1]}')
-				and el.log_id is null`
+				`DECLARE @extract_date datetime;
+				SET @extract_date = '${extractDate} 00:00:00.000';
+				SELECT DISTINCT
+					pd.dependant_pipeline_id,
+					p.pipeline_name,
+					el.pipeline_status
+				FROM rep_mda.mda_ocn_pipeline_dependencies pd
+				INNER JOIN rep_mda.mda_ocn_pipelines p
+					ON pd.dependant_pipeline_id = p.pipeline_id
+				OUTER APPLY (
+					SELECT TOP 1 el_inner.pipeline_status
+					FROM rep_mda.mda_ocn_execution_log el_inner
+					WHERE el_inner.pipeline_id = pd.dependant_pipeline_id
+						AND el_inner.extract_date >= @extract_date
+						AND el_inner.extract_date < DATEADD(day, 1, @extract_date)
+					ORDER BY el_inner.log_id DESC
+				) el
+				WHERE pd.pipeline_id = ${pipelineId}
+				ORDER BY p.pipeline_name`
 			);
 
 			setDependencyCheckResults(result.rows);
@@ -248,8 +296,15 @@ function ExecutionLogDashboard() {
 	};
 
 	const handleApplyFilters = () => {
-		setPage(1);
-		fetchExecutionLogs();
+		setError(null);
+		if (!hasAppliedFilters) {
+			setHasAppliedFilters(true);
+		}
+		if (page !== 1) {
+			setPage(1);
+		} else {
+			fetchExecutionLogs();
+		}
 	};
 
 	const handleClearFilters = () => {
@@ -263,6 +318,9 @@ function ExecutionLogDashboard() {
 			end_date_time: ''
 		});
 		setPage(1);
+		setHasAppliedFilters(false);
+		setLogs([]);
+		setTotalCount(0);
 	};
 
 	const calculateDuration = (start, end) => {
@@ -275,7 +333,14 @@ function ExecutionLogDashboard() {
 		return `${minutes}m ${seconds}s`;
 	};
 
-	const totalPages = Math.ceil(totalCount / pageSize);
+	const totalPages = Math.max(1, Math.ceil(totalCount / pageSize) || 0);
+	const canGoNext = totalCount > 0 && page < Math.ceil(totalCount / pageSize);
+
+	useEffect(() => {
+		if (!hasAppliedFilters) return;
+		fetchExecutionLogs();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [page, pageSize]);
 
 	const formatDateTime = (dateTimeString) => {
 		if (!dateTimeString) return 'N/A';
@@ -333,7 +398,17 @@ function ExecutionLogDashboard() {
 
 			<div className="environment-selector">
 				<label>Environment:</label>
-				<select value={environment} onChange={(e) => setEnvironment(e.target.value)}>
+				<select
+					value={environment}
+					onChange={(e) => {
+						setEnvironment(e.target.value);
+						setPage(1);
+						setHasAppliedFilters(false);
+						setLogs([]);
+						setTotalCount(0);
+						setError(null);
+					}}
+				>
 					<option value="dev">Development</option>
 					<option value="prod">Production</option>
 				</select>
@@ -426,9 +501,19 @@ function ExecutionLogDashboard() {
 			{/* Results */}
 			<div className="results-section">
 				<div className="results-header">
-					<h3>Execution Logs ({totalCount} total records)</h3>
+					<h3>
+						Execution Logs
+						{hasAppliedFilters ? ` (${totalCount} total records)` : ''}
+					</h3>
 					<div className="pagination-controls">
-						<select value={pageSize} onChange={(e) => setPageSize(parseInt(e.target.value))}>
+						<select
+							value={pageSize}
+							onChange={(e) => {
+								setPageSize(parseInt(e.target.value, 10));
+								setPage(1);
+							}}
+							disabled={!hasAppliedFilters || loading}
+						>
 							<option value={20}>20 per page</option>
 							<option value={50}>50 per page</option>
 							<option value={100}>100 per page</option>
@@ -439,15 +524,15 @@ function ExecutionLogDashboard() {
 
 						<button
 							onClick={() => setPage(p => Math.max(1, p - 1))}
-							disabled={page === 1 || loading}
+							disabled={!hasAppliedFilters || page === 1 || loading}
 							className="pagination-btn"
 						>
 							Previous
 						</button>
 
 						<button
-							onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-							disabled={page === totalPages || loading}
+							onClick={() => setPage(p => p + 1)}
+							disabled={!hasAppliedFilters || !canGoNext || loading}
 							className="pagination-btn"
 						>
 							Next
@@ -455,7 +540,7 @@ function ExecutionLogDashboard() {
 					</div>
 				</div>
 
-				{loading && <div className="loading">Loading execution logs...</div>}
+				{loading && hasAppliedFilters && <div className="loading">Loading execution logs...</div>}
 
 				<div className="logs-table-container">
 					<table className="logs-table">
@@ -477,12 +562,12 @@ function ExecutionLogDashboard() {
 						</thead>
 						<tbody>
 							{logs.map((log, index) => (
-								<tr key={index} className={`status-${log[3]?.toLowerCase().replace(' ', '-')}`}>
+								<tr key={index} className={`log-row log-row--${toStatusClass(log[3])}`}>
 									<td>{log[0]}</td>
 									<td>{log[1]}</td>
 									<td className="pipeline-name">{log[2]}</td>
-									<td>
-										<span className={`status-badge status-${log[3]?.toLowerCase().replace(' ', '-')}`}>
+									<td className="status-cell">
+										<span className={`status-badge status-${toStatusClass(log[3])}`}>
 											{log[3]}
 										</span>
 									</td>
@@ -513,7 +598,12 @@ function ExecutionLogDashboard() {
 					</table>
 				</div>
 
-				{logs.length === 0 && !loading && (
+				{!hasAppliedFilters && !loading && (
+					<div className="no-results placeholder-message">
+						Select environment and click Apply Filters to load execution logs.
+					</div>
+				)}
+				{hasAppliedFilters && logs.length === 0 && !loading && (
 					<div className="no-results">No execution logs found matching your criteria.</div>
 				)}
 			</div>
@@ -570,7 +660,10 @@ function ExecutionLogDashboard() {
 						<input
 							type="date"
 							value={extractDate}
-							onChange={(e) => setExtractDate(e.target.value)}
+							onChange={(e) => {
+								setExtractDate(e.target.value);
+								setDependencyCheckResults(null);
+							}}
 						/>
 					</div>
 				</div>
@@ -583,7 +676,10 @@ function ExecutionLogDashboard() {
 								<div
 									key={index}
 									className={`pipeline-item ${selectedPipeline && selectedPipeline[0] === pipeline[0] ? 'selected' : ''}`}
-									onClick={() => setSelectedPipeline(pipeline)}
+									onClick={() => {
+										setSelectedPipeline(pipeline);
+										setDependencyCheckResults(null);
+									}}
 								>
 									{pipeline[1]} (ID: {pipeline[0]})
 								</div>
@@ -604,6 +700,9 @@ function ExecutionLogDashboard() {
 				{dependencyCheckResults && (
 					<div className="dependency-results">
 						<h3>Dependency Execution Status</h3>
+						{dependencyCheckResults.length === 0 && (
+							<div className="no-results">No dependencies configured for this pipeline.</div>
+						)}
 						<div className="dependency-table-container">
 							<table className="dependency-table logs-table">
 								<thead>
@@ -614,13 +713,26 @@ function ExecutionLogDashboard() {
 									</tr>
 								</thead>
 								<tbody>
-									{dependencyCheckResults.map((result, index) => (
-										<tr key={index} className="not-executed">
-											<td>{result[0]}</td>
-											<td>{result[1]}</td>
-											<td>Not Executed</td>
-										</tr>
-									))}
+									{dependencyCheckResults.map((result) => {
+										const status = dependencyDisplayStatus(result[2]);
+										const statusClass = status === 'Not executed'
+											? 'not-executed'
+											: toStatusClass(status);
+										return (
+											<tr
+												key={result[0]}
+												className={`log-row log-row--${statusClass}`}
+											>
+												<td>{result[0]}</td>
+												<td>{result[1]}</td>
+												<td className="status-cell">
+													<span className={`status-badge status-${statusClass}`}>
+														{status}
+													</span>
+												</td>
+											</tr>
+										);
+									})}
 								</tbody>
 							</table>
 						</div>
@@ -736,12 +848,12 @@ function ExecutionLogDashboard() {
 							</thead>
 							<tbody>
 								{queue.map((item, index) => (
-									<tr key={index} className={`status-${item[3]?.toLowerCase()}`}>
+									<tr key={index} className={`log-row log-row--${toQueueStatusClass(item[3])}`}>
 										<td>{item[0]}</td>
 										<td>{item[1]}</td>
 										<td className="pipeline-name">{item[2]}</td>
-										<td>
-											<span className={`status-badge status-${item[3]?.toLowerCase()}`}>
+										<td className="status-cell">
+											<span className={`status-badge status-${toQueueStatusClass(item[3])}`}>
 												{item[3]}
 											</span>
 										</td>
