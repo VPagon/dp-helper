@@ -18,7 +18,7 @@ function QueryMetadataPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await executeQuery(environment, query);
+      const data = await executeQuery(environment, query, { source: 'query-metadata' });
       setResults(data);
     } catch (err) {
       setError(err.message);

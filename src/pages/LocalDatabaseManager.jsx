@@ -1,7 +1,7 @@
 // src/components/pages/LocalDatabaseManager.jsx
 import React, { useState, useEffect } from 'react';
 import HomeButton from '../components/common/HomeButtom';
-import '../styles/pages/_database-crud-v2.scss';
+import '../styles/pages/_database-crud.scss';
 
 const API_BASE_URL = 'http://localhost:5000'; // Change this to match your backend URL
 
@@ -626,7 +626,7 @@ export default function LocalDatabaseManager() {
     }, [searchQuery, filters, currentPage, itemsPerPage]);
 
     return (
-        <div className="database-crud-page-v2">
+        <div className="database-crud-page">
             <HomeButton />
             <br />
             <br />

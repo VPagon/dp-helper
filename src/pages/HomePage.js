@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../styles/pages/_home.scss';
 
 function HomePage() {
   return (
@@ -53,13 +52,17 @@ function HomePage() {
               <h3>Query Metadata</h3>
               <p>Execute metadata database queries</p>
             </Link>
-            <Link to="/database-crud-page" className="tool-card">
+            <Link to="/query-history" className="tool-card">
+              <h3>Query History</h3>
+              <p>Audit log of generated and executed SQL with revert</p>
+            </Link>
+            <Link to="/database-crud" className="tool-card">
               <h3>Database CRUD</h3>
               <p>Manage metadata database tables</p>
             </Link>
-            <Link to="/database-crud-page-v2" className="tool-card">
-              <h3>Database CRUD V2</h3>
-              <p>Manage metadata database tables</p>
+            <Link to="/mrm-dle-compare" className="tool-card">
+              <h3>MRM vs DLE Compare</h3>
+              <p>Compare MRM repository definitions with live DLE metadata</p>
             </Link>
           </div>
         </div>
@@ -116,6 +119,16 @@ function HomePage() {
             <Link to="/metadaterium" className="tool-card">
               <h3>Metadaterium</h3>
               <p>Load data throuhm metadaterium framework</p>
+            </Link>
+          </div>
+        </div>
+
+        <div className="category-card">
+          <h2>Developer Tools</h2>
+          <div className="tool-list">
+            <Link to="/code-snippets" className="tool-card">
+              <h3>Code Snippets</h3>
+              <p>Store reusable SQL, PySpark, and other code with formatting</p>
             </Link>
           </div>
         </div>

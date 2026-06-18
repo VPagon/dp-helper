@@ -578,14 +578,7 @@ export default function DataSyncPage() {
                             <h3>
                                 {showFilters ? '🔽' : '▶️'} Data Filters (Optional)
                                 {Object.values(filters).some(filter => filter.trim() !== '') && (
-                                    <span style={{
-                                        marginLeft: '10px',
-                                        fontSize: '12px',
-                                        color: '#d32f2f',
-                                        background: '#ffebee',
-                                        padding: '2px 8px',
-                                        borderRadius: '12px'
-                                    }}>
+                                    <span className="filter-badge-active">
                                         Active Filters
                                     </span>
                                 )}
@@ -621,26 +614,12 @@ export default function DataSyncPage() {
                                     ))}
                                 </div>
                                 {showFilters && (
-                                    <div className="filter-actions" style={{
-                                        marginTop: '20px',
-                                        paddingTop: '15px',
-                                        borderTop: '1px solid #dee2e6',
-                                        display: 'flex',
-                                        gap: '10px',
-                                        justifyContent: 'flex-end'
-                                    }}>
+                                    <div className="filter-actions filter-actions-footer">
                                         <button
+                                            type="button"
+                                            className="btn-clear-filters"
                                             onClick={clearAllFilters}
                                             disabled={loading}
-                                            style={{
-                                                padding: '8px 16px',
-                                                background: '#6c757d',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px'
-                                            }}
                                         >
                                             🗑️ Clear All
                                         </button>

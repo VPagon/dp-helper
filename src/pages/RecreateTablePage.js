@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import '../styles/pages/_recreate-table.scss';
 import HomeButton from '../components/common/HomeButtom';
 
 function RecreateTablePage() {
