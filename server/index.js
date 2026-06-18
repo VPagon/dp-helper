@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
 const sql = require('mssql');
 require('dotenv').config({ path: `${__dirname}/.env` });
+
+const codeSnippetsStore = require('./codeSnippetsStore');
 
 const { getLocalDatabase } = require('../src/database/local-db');
 // Initialize local database
@@ -630,6 +634,70 @@ app.get('/api/local/download', async (req, res) => {
 	}
 });
 
+
+// Code snippets — persisted in data/code-snippets.json on the host filesystem
+app.get('/api/code-snippets', async (req, res) => {
+	try {
+		const snippets = codeSnippetsStore.getAllSnippets();
+		res.json({ success: true, snippets });
+	} catch (err) {
+		res.status(500).json({ success: false, error: err.message });
+	}
+});
+
+app.post('/api/code-snippets', async (req, res) => {
+	try {
+		const record = await codeSnippetsStore.createSnippet(req.body || {});
+		res.status(201).json({ success: true, snippet: record });
+	} catch (err) {
+		res.status(err.statusCode || 500).json({ success: false, error: err.message });
+	}
+});
+
+app.put('/api/code-snippets/:id', async (req, res) => {
+	try {
+		const record = await codeSnippetsStore.updateSnippet(req.params.id, req.body || {});
+		res.json({ success: true, snippet: record });
+	} catch (err) {
+		res.status(err.statusCode || 500).json({ success: false, error: err.message });
+	}
+});
+
+app.delete('/api/code-snippets/:id', async (req, res) => {
+	try {
+		const result = await codeSnippetsStore.deleteSnippet(req.params.id);
+		res.json({ success: true, ...result });
+	} catch (err) {
+		res.status(err.statusCode || 500).json({ success: false, error: err.message });
+	}
+});
+
+app.post('/api/code-snippets/import', async (req, res) => {
+	const { snippets } = req.body || {};
+
+	if (!Array.isArray(snippets)) {
+		return res.status(400).json({
+			success: false,
+			error: 'snippets array is required',
+		});
+	}
+
+	try {
+		const merged = await codeSnippetsStore.importSnippets(snippets);
+		res.json({ success: true, snippets: merged });
+	} catch (err) {
+		res.status(err.statusCode || 500).json({ success: false, error: err.message });
+	}
+});
+
+// Production: serve React build from the same process so /api/* and the SPA share one origin.
+const buildPath = path.join(__dirname, '..', 'build');
+if (fs.existsSync(buildPath)) {
+	app.use(express.static(buildPath));
+	app.get(/^\/(?!api\/).*/, (req, res) => {
+		res.sendFile(path.join(buildPath, 'index.html'));
+	});
+}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`));
