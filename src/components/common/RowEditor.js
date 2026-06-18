@@ -48,7 +48,7 @@ function RowEditor({ row, columns, onClose, onUpdate, tableName }) {
 			<button className="close-btn" onClick={onClose}>X</button>
 			<h3>Edit Row</h3>
 
-			{error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+			{error && <div className="error-message" style={{ marginBottom: '10px' }}>{error}</div>}
 
 			<div className="editor-fields">
 				{columns.map((col, i) => (
