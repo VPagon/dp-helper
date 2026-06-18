@@ -1,4 +1,29 @@
-export async function executeQuery(environment, query) {
+import { logExecutedQuery } from './queryHistoryLogger';
+
+/**
+ * @param {string} environment
+ * @param {string} query
+ * @param {{ source?: string, metadata?: object, reverseSql?: string, skipHistory?: boolean }} [logContext]
+ */
+export async function executeQuery(environment, query, logContext = {}) {
+	const source = logContext.source || 'execute-query';
+	const shouldLog = !logContext.skipHistory && query && String(query).trim();
+	let historyLogged = false;
+
+	const writeHistory = (success, errorMessage) => {
+		if (!shouldLog || historyLogged) return;
+		historyLogged = true;
+		logExecutedQuery({
+			source,
+			environment,
+			sql: query,
+			success,
+			errorMessage,
+			metadata: logContext.metadata,
+			reverseSql: logContext.reverseSql,
+		}).catch((logErr) => console.warn('[query-history]', logErr));
+	};
+
 	try {
 		console.log("[DEBUG] Sending query:", { environment, query });
 
@@ -26,13 +51,18 @@ export async function executeQuery(environment, query) {
 
 		// For all query types
 		if (data.success === false) {
-			throw new Error(data.error || 'Query failed');
+			const failMessage = data.error || 'Query failed';
+			writeHistory(false, failMessage);
+			throw new Error(failMessage);
 		}
 
+		writeHistory(true, null);
 		return data;
 	} catch (err) {
 		console.error("[DEBUG] Full error:", err);
-		throw new Error(`API Error: ${err.message}`);
+		const message = err.message || String(err);
+		writeHistory(false, message);
+		throw new Error(`API Error: ${message}`);
 	}
 }
 
