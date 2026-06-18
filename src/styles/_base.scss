@@ -1,0 +1,173 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  padding-top: var(--app-header-height);
+}
+
+a {
+  color: var(--color-link);
+}
+
+a:hover {
+  color: var(--color-link-hover);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-text-heading);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.app button,
+.app .btn {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.app button:focus-visible,
+.app .btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.app button:not(.theme-toggle):not(.theme-toggle__track):not(.home-button):not(.add-dependancy-button):not(.cs-card-summary):not(.cs-btn--secondary):not(.cs-btn--danger),
+.app .btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.app button:not(.theme-toggle):not(.theme-toggle__track):not(.home-button):not(.add-dependancy-button):not(.cs-card-summary):not(.cs-btn--secondary):not(.cs-btn--danger):hover:not(:disabled),
+.app .btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.app button:disabled,
+.app .btn:disabled {
+  background-color: var(--color-disabled-bg);
+  color: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+.app .btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text-inverse);
+}
+
+.app .btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-secondary-hover);
+}
+
+.app .btn-danger {
+  background-color: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+.app .btn-danger:hover:not(:disabled) {
+  background-color: var(--color-danger-hover);
+}
+
+.app input,
+.app select,
+.app textarea {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+}
+
+.app input:focus,
+.app select:focus,
+.app textarea:focus {
+  outline: none;
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--focus-ring);
+}
+
+.app table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.app th,
+.app td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.app th {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-heading);
+  font-weight: 600;
+}
+
+.app tr:nth-child(even) td {
+  background-color: var(--color-surface-muted);
+}
+
+.error-message {
+  color: var(--color-danger);
+}
+
+.panel,
+.card-surface {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.muted-panel {
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}

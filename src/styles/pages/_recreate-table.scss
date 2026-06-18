@@ -1,70 +1,57 @@
 .recreate-table-page {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-lg) var(--page-padding-inline);
 }
 
-.input-section {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+.recreate-table-page .input-section {
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
 }
 
-.form-group {
-  margin-bottom: 15px;
+.recreate-table-page .form-group {
+  margin-bottom: var(--space-md);
 }
 
-.form-group label {
+.recreate-table-page .form-group label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-text-heading);
 }
 
-.form-group input {
+.recreate-table-page .form-group input {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
 }
 
-.radio-group {
+.recreate-table-page .radio-group {
   display: flex;
-  gap: 15px;
+  gap: var(--space-md);
 }
 
-.radio-group label {
+.recreate-table-page .radio-group label {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-xs);
   font-weight: normal;
 }
 
-button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
+.recreate-table-page .output-section {
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
 }
 
-button:hover {
-  background-color: #45a049;
-}
-
-.output-section {
-  background-color: #f0f0f0;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.sql-output {
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 4px;
+.recreate-table-page .sql-output {
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
   overflow-x: auto;
   white-space: pre-wrap;
-  margin-bottom: 15px;
+  margin-bottom: var(--space-md);
 }

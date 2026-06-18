@@ -2,13 +2,13 @@
 .pipeline-branch-out {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-lg) var(--page-padding-inline);
 }
 
 .input-section {
   margin-bottom: 30px;
   padding: 20px;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-muted);
   border-radius: 5px;
 }
 
@@ -25,29 +25,29 @@
 .form-group input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 }
 
 button {
   padding: 10px 15px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--color-accent);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: var(--color-disabled-bg);
   cursor: not-allowed;
 }
 
 .error-message {
-  color: #f44336;
+  color: var(--color-danger);
   margin: 15px 0;
   padding: 10px;
-  background-color: #ffebee;
+  background-color: var(--color-danger-bg);
   border-radius: 4px;
 }
 
@@ -58,28 +58,28 @@ button:disabled {
 
 .dependency-column {
   flex: 1;
-  background-color: #f9f9f9;
+  background-color: var(--color-surface-muted);
   padding: 15px;
   border-radius: 5px;
 }
 
 .base-pipeline {
   flex: 0 0 300px;
-  background-color: #e3f2fd;
+  background-color: var(--color-info-bg);
   padding: 15px;
   border-radius: 5px;
 }
 
 .pipeline-card {
   padding: 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background-color: white;
+  background-color: var(--color-surface);
 }
 
 .pipeline-card.disabled {
   opacity: 0.7;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-muted);
 }
 
 .pipeline-name {
@@ -94,7 +94,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   font-size: 0.9em;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .dependency-list {
@@ -107,10 +107,10 @@ button:disabled {
 }
 
 .dependency-item {
-  background: white;
+  background: var(--color-surface);
   border-radius: 4px;
   padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -118,7 +118,7 @@ button:disabled {
 
 .dependency-item.disabled {
   opacity: 0.7;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-muted);
 }
 
 .dependency-content {
@@ -132,8 +132,8 @@ button:disabled {
 .pipeline-id, .pipeline-level {
   font-family: monospace;
   font-size: 0.85em;
-  color: #666;
-  background: #f5f5f5;
+  color: var(--color-text-muted);
+  background: var(--color-bg-muted);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -142,8 +142,8 @@ button:disabled {
   font-size: 0.9em;
   padding: 2px 8px;
   border-radius: 4px;
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
   margin-left: auto;
 }
 
@@ -160,12 +160,12 @@ button:disabled {
 }
 
 .disabled .pipeline-status {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-text);
 }
 
 .context-menu {
-  background: white;
+  background: var(--color-surface);
   border-radius: 6px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
   padding: 15px;
@@ -180,7 +180,7 @@ button:disabled {
   align-items: center;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .close-btn {
@@ -188,7 +188,7 @@ button:disabled {
   border: none;
   font-size: 1.5em;
   cursor: pointer;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .log-table {
@@ -200,11 +200,11 @@ button:disabled {
 .log-table th, .log-table td {
   padding: 8px 10px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .log-table th {
-  background: #f5f5f5;
+  background: var(--color-bg-muted);
   font-weight: 500;
   position: sticky;
   top: 0;
@@ -218,27 +218,27 @@ button:disabled {
 
 /* Status colors */
 .status-SUCCESS {
-  color: #4CAF50;
+  color: var(--color-accent);
   font-weight: bold;
 }
 
 .status-FAILED {
-  color: #f44336;
+  color: var(--color-danger);
   font-weight: bold;
 }
 
 .status-RUNNING {
-  color: #FFC107;
+  color: var(--color-chart-warn);
   font-weight: bold;
 }
 
 .status-COMPLETED {
-  color: #2196F3;
+  color: var(--color-primary);
   font-weight: bold;
 }
 
 .context-menu {
-  background: white;
+  background: var(--color-surface);
   border-radius: 6px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
   padding: 15px;
@@ -267,22 +267,22 @@ button:disabled {
 
 /* Status colors */
 .status-SUCCESS {
-  color: #4CAF50;
+  color: var(--color-accent);
   font-weight: bold;
 }
 
 .status-FAILED {
-  color: #f44336;
+  color: var(--color-danger);
   font-weight: bold;
 }
 
 .status-RUNNING {
-  color: #FFC107;
+  color: var(--color-chart-warn);
   font-weight: bold;
 }
 
 .status-COMPLETED {
-  color: #2196F3;
+  color: var(--color-primary);
   font-weight: bold;
 }
 
@@ -292,7 +292,7 @@ button:disabled {
   align-items: center;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .close-btn {
@@ -300,12 +300,12 @@ button:disabled {
   border: none;
   font-size: 1.5em;
   cursor: pointer;
-  color: #999;
+  color: var(--color-text-muted);
   padding: 0 5px;
 }
 
-.level-1 { border-left: 3px solid #4CAF50; }
-.level-2 { border-left: 3px solid #2196F3; }
-.level-3 { border-left: 3px solid #FF9800; }
-.level-4 { border-left: 3px solid #9C27B0; }
-.level-5 { border-left: 3px solid #607D8B; }
+.level-1 { border-left: 3px solid var(--color-accent); }
+.level-2 { border-left: 3px solid var(--color-primary); }
+.level-3 { border-left: 3px solid var(--color-level-3); }
+.level-4 { border-left: 3px solid var(--color-level-4); }
+.level-5 { border-left: 3px solid var(--color-level-5); }

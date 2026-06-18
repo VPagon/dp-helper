@@ -4,7 +4,18 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#1e5a8a" />
+    <script>
+      (function () {
+        var key = 'dp-helper-theme';
+        var saved = localStorage.getItem(key);
+        var theme = saved === 'light' || saved === 'dark' ? saved : null;
+        if (!theme) {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
     <meta
       name="description"
       content="Web site created using create-react-app"

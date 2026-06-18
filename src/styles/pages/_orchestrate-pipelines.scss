@@ -1,7 +1,7 @@
 .orchestrate-pipelines-page {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 20px;
+	padding: var(--space-lg) var(--page-padding-inline);
 
 	.environment-selector {
 		margin-bottom: 20px;
@@ -27,7 +27,7 @@
 			input {
 				width: 100%;
 				padding: 10px;
-				border: 1px solid #ddd;
+				border: 1px solid var(--color-border);
 				border-radius: 4px;
 			}
 
@@ -36,8 +36,8 @@
 				width: 100%;
 				max-height: 300px;
 				overflow-y: auto;
-				background: white;
-				border: 1px solid #ddd;
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
 				border-top: none;
 				border-radius: 0 0 4px 4px;
 				z-index: 10;
@@ -47,7 +47,7 @@
 					cursor: pointer;
 
 					&:hover {
-						background-color: #f5f5f5;
+						background-color: var(--color-bg-muted);
 					}
 				}
 			}
@@ -55,8 +55,8 @@
 	}
 
 	.add-group-btn {
-		background-color: #4CAF50;
-		color: white;
+		background-color: var(--color-accent);
+		color: var(--color-surface);
 		padding: 10px 15px;
 		border: none;
 		border-radius: 4px;
@@ -70,7 +70,7 @@
 		gap: 30px;
 
 		.dependency-group {
-			border: 1px solid #ddd;
+			border: 1px solid var(--color-border);
 			border-radius: 8px;
 			padding: 20px;
 			position: relative;
@@ -83,7 +83,7 @@
 				border: none;
 				font-size: 1.5em;
 				cursor: pointer;
-				color: #f44336;
+				color: var(--color-danger);
 			}
 
 			.group-columns {
@@ -99,13 +99,13 @@
 					h3 {
 						margin-top: 0;
 						padding-bottom: 10px;
-						border-bottom: 1px solid #eee;
+						border-bottom: 1px solid var(--color-border-subtle);
 					}
 				}
 
 				.add-dependant-btn {
-					background-color: #2196F3;
-					color: white;
+					background-color: var(--color-primary);
+					color: var(--color-surface);
 					padding: 8px 12px;
 					border: none;
 					border-radius: 4px;
@@ -120,7 +120,7 @@
 					input {
 						width: 100%;
 						padding: 8px;
-						border: 1px solid #ddd;
+						border: 1px solid var(--color-border);
 						border-radius: 4px;
 					}
 
@@ -129,8 +129,8 @@
 						width: 100%;
 						max-height: 200px;
 						overflow-y: auto;
-						background: white;
-						border: 1px solid #ddd;
+						background: var(--color-surface);
+						border: 1px solid var(--color-border);
 						border-radius: 0 0 4px 4px;
 						z-index: 10;
 
@@ -139,7 +139,7 @@
 							cursor: pointer;
 
 							&:hover {
-								background-color: #f5f5f5;
+								background-color: var(--color-bg-muted);
 							}
 						}
 					}
@@ -148,7 +148,7 @@
 						margin-top: 5px;
 						background: none;
 						border: none;
-						color: #f44336;
+						color: var(--color-danger);
 						cursor: pointer;
 					}
 				}
@@ -157,8 +157,8 @@
 	}
 
 	.generate-sql-btn {
-		background-color: #FF9800;
-		color: white;
+		background-color: var(--color-warning-text);
+		color: var(--color-surface);
 		padding: 12px 20px;
 		border: none;
 		border-radius: 4px;
@@ -166,7 +166,7 @@
 		cursor: pointer;
 
 		&:disabled {
-			background-color: #cccccc;
+			background-color: var(--color-disabled-bg);
 		}
 	}
 
@@ -176,25 +176,25 @@
 		border-radius: 4px;
 
 		&.success {
-			color: #4CAF50;
-			background-color: #e8f5e9;
+			color: var(--color-accent);
+			background-color: var(--color-success-bg);
 		}
 
 		&.error {
-			color: #f44336;
-			background-color: #ffebee;
+			color: var(--color-danger);
+			background-color: var(--color-danger-bg);
 		}
 	}
 
 	.sql-output {
 		margin-top: 30px;
-		background-color: #f5f5f5;
+		background-color: var(--color-bg-muted);
 		padding: 20px;
 		border-radius: 8px;
 
 		pre {
 			white-space: pre-wrap;
-			background-color: white;
+			background-color: var(--color-surface);
 			padding: 15px;
 			border-radius: 4px;
 			overflow-x: auto;
@@ -202,8 +202,8 @@
 
 		.copy-btn {
 			margin-top: 10px;
-			background-color: #2196F3;
-			color: white;
+			background-color: var(--color-primary);
+			color: var(--color-surface);
 			padding: 8px 15px;
 			border: none;
 			border-radius: 4px;
@@ -217,30 +217,30 @@
 		margin-top: 10px;
 
 		.copy-btn {
-			background-color: #2196F3;
-			color: white;
+			background-color: var(--color-primary);
+			color: var(--color-surface);
 			padding: 8px 15px;
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
 
 			&:disabled {
-				background-color: #cccccc;
+				background-color: var(--color-disabled-bg);
 				cursor: not-allowed;
 			}
 		}
 	}
 
 	.execute-btn {
-		background-color: #4CAF50;
-		color: white;
+		background-color: var(--color-accent);
+		color: var(--color-surface);
 		padding: 8px 15px;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 
 		&:disabled {
-			background-color: #cccccc;
+			background-color: var(--color-disabled-bg);
 			cursor: not-allowed;
 		}
 	}

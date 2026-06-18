@@ -1,18 +1,5 @@
-/* src/components/common/HomeButton.css */
-.home-button {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  padding: 8px 16px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  z-index: 1000;
-}
-
-.home-button:hover {
-  background-color: #45a049;
-}
+/* Navigation is provided by AppHeader; hide legacy fixed control to avoid overlap. */
+.home-button {
+  display: none;
+}
+

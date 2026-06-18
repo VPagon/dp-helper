@@ -2,13 +2,13 @@
 .replicate-br-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-lg) var(--page-padding-inline);
 }
 
 .input-section {
   margin-bottom: 20px;
   padding: 20px;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-muted);
   border-radius: 5px;
 }
 
@@ -25,7 +25,7 @@
 .form-group input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 }
 
@@ -37,27 +37,27 @@
 
 .button-group button {
   padding: 10px 15px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--color-accent);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .button-group button:disabled {
-  background-color: #cccccc;
+  background-color: var(--color-disabled-bg);
   cursor: not-allowed;
 }
 
 .generate-btn {
-  background-color: #2196F3 !important;
+  background-color: var(--color-primary) !important;
 }
 
 .error-message {
-  color: #f44336;
+  color: var(--color-danger);
   margin: 15px 0;
   padding: 10px;
-  background-color: #ffebee;
+  background-color: var(--color-danger-bg);
   border-radius: 4px;
 }
 
@@ -76,17 +76,17 @@
 }
 
 .results-table th, .results-table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   padding: 8px;
   text-align: left;
 }
 
 .results-table th {
-  background-color: #f2f2f2;
+  background-color: var(--color-surface-muted);
 }
 
 .sql-section pre {
-  background-color: #f8f8f8;
+  background-color: var(--color-code-bg);
   padding: 15px;
   border-radius: 4px;
   overflow-x: auto;
@@ -96,13 +96,13 @@
 .copy-btn {
   margin-top: 10px;
   padding: 8px 15px;
-  background-color: #ff9800;
-  color: white;
+  background-color: var(--color-chart-warn);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .copy-btn:hover {
-  background-color: #f57c00;
+  background-color: var(--color-chart-warn);
 }

@@ -1,59 +1,65 @@
 .home-page {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-lg) var(--page-padding-inline);
 }
 
 .tool-categories {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 25px;
+  gap: var(--space-lg);
 }
 
 .category-card {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+
   h2 {
     margin-top: 0;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #dee2e6;
-    color: #2c3e50;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-heading);
+    font-size: 1.125rem;
   }
 }
 
 .tool-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: var(--space-md);
 }
 
 .tool-card {
   display: block;
-  padding: 15px;
-  border-radius: 6px;
-  background: white;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
   text-decoration: none;
-  color: #495057;
-  transition: all 0.2s ease;
-  border-left: 4px solid #4CAF50;
-  
+  color: var(--color-text-secondary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  border: 1px solid var(--color-border-subtle);
+  border-left: 5px solid var(--color-accent);
+
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    border-left: 4px solid #2196F3;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-border-emphasis);
+    border-left-color: var(--color-primary);
+    color: var(--color-text);
   }
-  
+
   h3 {
-    margin: 0 0 5px 0;
-    color: #2c3e50;
+    margin: 0 0 var(--space-xs) 0;
+    color: var(--color-text-heading);
+    font-size: 1rem;
   }
-  
+
   p {
     margin: 0;
-    font-size: 1.0em;
-    color: #6c757d;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
   }
 }

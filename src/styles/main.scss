@@ -1,4 +1,9 @@
-// Pages
+@import 'tokens';
+@import 'base';
+@import '../components/layout/AppHeader';
+@import '../components/layout/ThemeToggle';
+
+// Shared page styles loaded globally
 @import 'pages/home';
 @import 'pages/insert-data';
 @import 'pages/recreate-table';
