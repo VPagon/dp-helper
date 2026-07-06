@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"azure-sql": {
+			"command": "node",
+			"args": ["mcp-server/index.js"]
+		}
+	}
+}
