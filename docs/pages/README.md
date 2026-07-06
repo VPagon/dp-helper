@@ -7,9 +7,9 @@ Index of all routed pages in the React app (`src/App.js`). Each link goes to det
 | Route | Page | Doc |
 |-------|------|-----|
 | `/` | Home | [home.md](./home.md) |
-| `/query-metadata` | Query Metadata | [query-metadata.md](./query-metadata.md) |
 | `/metadata-differences` | Metadata Comparison | [metadata-differences.md](./metadata-differences.md) |
 | `/database-crud` | Database CRUD | [database-crud.md](./database-crud.md) |
+| `/database-info` | Database Info | [database-info.md](./database-info.md) |
 | `/insert-data` | Insert Data | [insert-data.md](./insert-data.md) |
 | `/recreate-table` | Recreate Table | [recreate-table.md](./recreate-table.md) |
 | `/execution-logs` | Execution Log Dashboard | [execution-logs.md](./execution-logs.md) |
@@ -45,9 +45,9 @@ Index of all routed pages in the React app (`src/App.js`). Each link goes to det
 
 ### Metadata operations
 
-- [Query Metadata](./query-metadata.md) — `/query-metadata`
 - [Query History](./query-history.md) — `/query-history`
 - [Database CRUD](./database-crud.md) — `/database-crud`
+- [Database Info](./database-info.md) — `/database-info`
 - [MRM vs DLE Compare](./mrm-dle-compare.md) — `/mrm-dle-compare` *(dev only)*
 
 ### Pipeline tools

@@ -275,7 +275,7 @@ where status in ('Missing on dev', 'Difference in data')`);
     };
 
     return (
-        <div className="query-metadata-page metadata-differences-page">
+        <div className="metadata-differences-page">
             <HomeButton />
             <br />
             <h1>Get Metadata Differences</h1>
