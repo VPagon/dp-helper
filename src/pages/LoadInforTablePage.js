@@ -23,8 +23,8 @@ function LoadInforTablePage() {
 	const [loadCategoryCdc, setLoadCategoryCdc] = useState('standard_load');
 	const [loadCategorySnapshot, setLoadCategorySnapshot] = useState('irregular_dq');
 	const [loadCategoryRdl, setLoadCategoryRdl] = useState('standard_load');
-	const [taskIdCdc, setTaskIdCdc] = useState(7);
-	const [taskIdSnapshot, setTaskIdSnapshot] = useState(110);
+	const [taskIdCdc, setTaskIdCdc] = useState(3);
+	const [taskIdSnapshot, setTaskIdSnapshot] = useState(100);
 
 	const [companyResults, setCompanyResults] = useState([]);
 

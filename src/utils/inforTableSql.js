@@ -31,71 +31,45 @@ function formatSqlDateTime(date) {
 	return date.toISOString().slice(0, 19).replace('T', ' ') + '.000';
 }
 
-function pipelineInsertSql({ name, shortName, description, owner, loadCategory, priority, pipelineType, todayStr, initialDateStr }) {
+function pipelineInsertSql({
+	name, shortName, description, owner, loadCategory, priority, pipelineType,
+	todayStr, initialDateStr, executionResource, orchestratorTool,
+}) {
+	const extraColumns = [
+		executionResource ? 'execution_resource' : null,
+		orchestratorTool ? 'orchestrator_tool' : null,
+	].filter(Boolean);
+	const extraValues = [
+		executionResource ? sqlLiteral(executionResource) : null,
+		orchestratorTool ? sqlLiteral(orchestratorTool) : null,
+	].filter(Boolean);
+
+	const columnsSql = [
+		'pipeline_name', 'pipeline_short_name', 'pipeline_description', 'schedule_type',
+		'pipeline_owner', 'enabled', 'is_running', 'batch_type', 'metadata_tool_name',
+		'metadata_tool_job_pk', 'multiple_loads', 'prod_mail_to', 'test_mail_to',
+		'initial_date', 'date_of_insert', 'pipeline_type', 'load_category', 'pipeline_priority',
+		...extraColumns,
+	].join(',\n    ');
+
+	const valuesSql = [
+		sqlLiteral(name), sqlLiteral(shortName), sqlLiteral(description), "'D'",
+		sqlLiteral(owner), '1', '0', "'BT'", 'NULL',
+		'NULL', '1', 'NULL', 'NULL',
+		sqlLiteral(initialDateStr), sqlLiteral(todayStr), sqlLiteral(pipelineType), sqlLiteral(loadCategory), String(priority),
+		...extraValues,
+	].join(',\n    ');
+
 	return `INSERT INTO rep_mda.mda_ocn_pipelines (
-    pipeline_name,
-    pipeline_short_name,
-    pipeline_description,
-    schedule_type,
-    pipeline_owner,
-    enabled,
-    is_running,
-    batch_type,
-    metadata_tool_name,
-    metadata_tool_job_pk,
-    multiple_loads,
-    prod_mail_to,
-    test_mail_to,
-    initial_date,
-    date_of_insert,
-    pipeline_type,
-    load_category,
-    pipeline_priority)
+    ${columnsSql})
 VALUES (
-    ${sqlLiteral(name)},
-    ${sqlLiteral(shortName)},
-    ${sqlLiteral(description)},
-    'D',
-    ${sqlLiteral(owner)},
-    1,
-    0,
-    'BT',
-    NULL,
-    NULL,
-    1,
-    NULL,
-    NULL,
-    ${sqlLiteral(initialDateStr)},
-    ${sqlLiteral(todayStr)},
-    ${sqlLiteral(pipelineType)},
-    ${sqlLiteral(loadCategory)},
-    ${priority});`;
+    ${valuesSql});`;
 }
 
-function ingestionInsertSql({
-	jobName, schema, table, alias, server, database, datastoreType,
-	sourceCopySettings, sinkFolderPath, sinkFileSystem, includeTranslatorNull,
-	copyLogSuffix, dataLoadingBehavior, taskId,
+function dataIngestionInsertSql({
+	jobName, sourceObjectSettings, sourceConnectionSettings, sourceCopySettings,
+	sinkObjectSettings, copyActivitySettings, triggeringEntityName, dataLoadingBehaviorSettings, taskId,
 }) {
-	const sourceObjectSettings = { schema, table };
-	const sourceConnectionSettings = {
-		SourceConnectionAlias: alias,
-		LinkedServiceName: 'LS_GEN_SHIR_SQLServerWindowsAuth',
-		MSSQLServerName: server,
-		MSSQLDatabaseName: database,
-		DatastoreType: datastoreType,
-	};
-	const sinkObjectSettings = {
-		fileName: '#schema#.#table#.snappy.parquet',
-		folderPath: sinkFolderPath,
-		fileSystem: sinkFileSystem,
-	};
-	const copyActivitySettings = {
-		...(includeTranslatorNull ? { translator: null } : {}),
-		logFolderPath: `00-default/900_logs/#date_yyyyMMdd#/01_data_ingestion/#pipeline#/${copyLogSuffix}/#folder_path#`,
-	};
-	const triggeringEntityName = ['Sandbox', 'Manual', 'TGR_Scheduled3AM', '<ANY>'];
-
 	return `INSERT INTO rep_mda.mda_data_ingestion (
     job_name,
     source_object_settings,
@@ -113,20 +87,37 @@ function ingestionInsertSql({
     copy_enabled)
 VALUES (
     ${sqlLiteral(jobName)},
-    ${jsonLiteral(sourceObjectSettings)},
-    ${jsonLiteral(sourceConnectionSettings)},
-    ${jsonLiteral(sourceCopySettings)},
-    ${jsonLiteral(sinkObjectSettings)},
+    ${sqlLiteral(sourceObjectSettings)},
+    ${sqlLiteral(sourceConnectionSettings)},
+    ${sqlLiteral(sourceCopySettings)},
+    ${sqlLiteral(sinkObjectSettings)},
     NULL,
     NULL,
-    ${jsonLiteral(copyActivitySettings)},
+    ${sqlLiteral(copyActivitySettings)},
     'PPE_MdaIngestionTopLevel',
-    ${jsonLiteral(triggeringEntityName)},
-    ${jsonLiteral(dataLoadingBehavior)},
+    ${sqlLiteral(triggeringEntityName)},
+    ${sqlLiteral(dataLoadingBehaviorSettings)},
     ${taskId},
     'Default',
     1);`;
 }
+
+// CDC ingestion job's folder/log-path JSON is always this exact static shape (all
+// path segments are macros — #schema#/#table#/#source#/etc — resolved by the
+// Synapse pipeline engine at runtime, never substituted here) with forward
+// slashes escaped, matching the live dev row for MS_SQL_CDC_INFOR_DBO_..._TO_BRONZE_LANDING_ZONE.
+const CDC_SINK_OBJECT_SETTINGS = '{"fileName":"#schema#.#table#.snappy.parquet","folderPath":"01_#source#\\/01_#schema#\\/04_parquet\\/lze_#table#\\/#subfolder#\\/year=#year#\\/month=#month#\\/day=#day#","fileSystem":"01-bronze\\/01_landing"}';
+const CDC_COPY_ACTIVITY_SETTINGS = '{"logFolderPath":"00-default\\/900_logs\\/#date_yyyyMMdd#\\/01_data_ingestion\\/#pipeline#\\/load_sql_cdc\\/#folder_path#"}';
+const CDC_TRIGGERING_ENTITY_NAME = '["Sandbox","Manual","TGR_Scheduled3AM","<ANY>"]';
+// First insert seeds a full historical backfill before CDC delta capture takes over.
+const CDC_DATA_LOADING_BEHAVIOR = '{"dataLoadingBehavior":"FullLoad","watermarkColumnStartValue":null}';
+
+// Snapshot ingestion job's source_copy_settings/triggering_entity_name are left in
+// the original hand-formatted legacy style (pretty-printed, unescaped slashes, no
+// "<ANY>" trigger) — verbatim match of the live dev row for TQMPTC300220's
+// MS_SQL_INFOR_DBO_..._TO_BRONZE_ZONE ingestion job.
+const SNAPSHOT_SOURCE_COPY_SETTINGS = '{\r\n\t\t\t"PartitionOption":      "None",\r\n\t\t\t"SqlReaderQuery":       "select * from #schema#.#table#",\r\n\t\t\t"PartitionLowerBound":  null,\r\n\t\t\t"PartitionUpperBound":  null,\r\n\t\t\t"PartitionColumnName":  null,\r\n\t\t\t"PartitionNames":       null\r\n\t\t\t}';
+const SNAPSHOT_TRIGGERING_ENTITY_NAME = '["Sandbox", "Manual", "TGR_Scheduled3AM"]';
 
 function dependencyInsertSql({ pipelineNameSubquery, dependantNameSubquery, keyDep, additionalChecks }) {
 	return `INSERT INTO rep_mda.mda_ocn_pipeline_dependencies (
@@ -189,6 +180,22 @@ export function buildInforTableInserts(params) {
 		const rdlName = `RDL_R_LN_DBO_${full}_DELTA`;
 		const keyRdlTbe = `BRONZE#R_LN_DBO_${full}_DELTA`;
 
+		const sourceConnectionSettingsCdc = JSON.stringify({
+			SourceConnectionAlias: sourceAlias,
+			LinkedServiceName: 'LS_GEN_SHIR_SQLServerWindowsAuth',
+			MSSQLServerName: sourceServer,
+			MSSQLDatabaseName: sourceDatabase,
+			DatastoreType: 'RimacOnPremSQLServerTableCdc',
+		});
+		const sourceConnectionSettingsSnapshot = JSON.stringify({
+			SourceConnectionAlias: sourceAlias,
+			LinkedServiceName: 'LS_GEN_SHIR_SQLServerWindowsAuth',
+			MSSQLServerName: sourceServer,
+			MSSQLDatabaseName: sourceDatabase,
+			DatastoreType: 'RimacOnPremSQLServerTable',
+		});
+		const sourceObjectSettings = JSON.stringify({ schema, table: fullLower });
+
 		const queries = [
 			{
 				id: 'cdc-pipeline',
@@ -203,6 +210,7 @@ export function buildInforTableInserts(params) {
 					pipelineType: 'METADATA_DRIVEN_INGESTION',
 					todayStr,
 					initialDateStr,
+					executionResource: 'AZURE_SYNAPSE_PIPELINE',
 				}),
 			},
 			{
@@ -218,6 +226,7 @@ export function buildInforTableInserts(params) {
 					pipelineType: 'METADATA_DRIVEN_INGESTION',
 					todayStr,
 					initialDateStr,
+					executionResource: 'AZURE_SYNAPSE_PIPELINE',
 				}),
 			},
 			{
@@ -233,6 +242,7 @@ export function buildInforTableInserts(params) {
 					pipelineType: 'LOAD_RAW_DELTA',
 					todayStr,
 					initialDateStr,
+					orchestratorTool: 'Synapse Notebook',
 				}),
 			},
 			{
@@ -252,47 +262,30 @@ VALUES (
 			{
 				id: 'cdc-ingestion',
 				label: 'CDC Ingestion Job',
-				sql: ingestionInsertSql({
+				sql: dataIngestionInsertSql({
 					jobName: cdcName,
-					schema,
-					table: fullLower,
-					alias: sourceAlias,
-					server: sourceServer,
-					database: sourceDatabase,
-					datastoreType: 'RimacOnPremSQLServerTableCdc',
-					sourceCopySettings: { PartitionOption: 'None', PartitionNames: null },
-					sinkFolderPath: '01_#source#/01_#schema#/04_parquet/lze_#table#/#subfolder#/year=#year#/month=#month#/day=#day#',
-					sinkFileSystem: '01-bronze/01_landing',
-					includeTranslatorNull: false,
-					copyLogSuffix: 'load_sql_cdc',
-					dataLoadingBehavior: { dataLoadingBehavior: 'DeltaLoad', watermarkColumnStartValue: null },
+					sourceObjectSettings,
+					sourceConnectionSettings: sourceConnectionSettingsCdc,
+					sourceCopySettings: '{"PartitionOption":"None","PartitionNames":null}',
+					sinkObjectSettings: CDC_SINK_OBJECT_SETTINGS,
+					copyActivitySettings: CDC_COPY_ACTIVITY_SETTINGS,
+					triggeringEntityName: CDC_TRIGGERING_ENTITY_NAME,
+					dataLoadingBehaviorSettings: CDC_DATA_LOADING_BEHAVIOR,
 					taskId: taskIdCdc,
 				}),
 			},
 			{
 				id: 'snapshot-ingestion',
 				label: 'Snapshot Ingestion Job',
-				sql: ingestionInsertSql({
+				sql: dataIngestionInsertSql({
 					jobName: snapshotName,
-					schema,
-					table: fullLower,
-					alias: sourceAlias,
-					server: sourceServer,
-					database: sourceDatabase,
-					datastoreType: 'RimacOnPremSQLServerTable',
-					sourceCopySettings: {
-						PartitionOption: 'None',
-						PartitionNames: null,
-						SqlReaderQuery: 'select * from #schema#.#table#',
-						PartitionLowerBound: null,
-						PartitionUpperBound: null,
-						PartitionColumnName: null,
-					},
-					sinkFolderPath: '01_#source#/01_#schema#/rze_#table#/year=#year#/month=#month#/day=#day#',
-					sinkFileSystem: '01-bronze/02_raw',
-					includeTranslatorNull: true,
-					copyLogSuffix: 'load_sql',
-					dataLoadingBehavior: { dataLoadingBehavior: 'FullLoad', watermarkColumnStartValue: null },
+					sourceObjectSettings,
+					sourceConnectionSettings: sourceConnectionSettingsSnapshot,
+					sourceCopySettings: SNAPSHOT_SOURCE_COPY_SETTINGS,
+					sinkObjectSettings: '{"fileName":"#schema#.#table#.snappy.parquet","folderPath":"01_#source#/01_#schema#/rze_#table#/year=#year#/month=#month#/day=#day#","fileSystem":"01-bronze/02_raw"}',
+					copyActivitySettings: '{"translator":null,"logFolderPath":"00-default/900_logs/#date_yyyyMMdd#/01_data_ingestion/#pipeline#/load_sql/#folder_path#"}',
+					triggeringEntityName: SNAPSHOT_TRIGGERING_ENTITY_NAME,
+					dataLoadingBehaviorSettings: '{"dataLoadingBehavior":"FullLoad","watermarkColumnStartValue":null}',
 					taskId: taskIdSnapshot,
 				}),
 			},
@@ -327,8 +320,8 @@ VALUES (
     ${sqlLiteral(keyRdlTbe)});`,
 			},
 			{
-				id: 'dep-rdl-cdc',
-				label: 'Dependency: RDL → CDC',
+				id: 'dep-cdc-rdl',
+				label: 'Dependency: CDC → RDL',
 				sql: dependencyInsertSql({
 					pipelineNameSubquery: rdlName,
 					dependantNameSubquery: cdcName,
