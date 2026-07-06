@@ -1,230 +1,266 @@
-// src/pages/LoadInforTablePage.js
 import React, { useState } from 'react';
-import '../styles/pages/LoadInforTablePage.css';
-import HomeButton from 'components/common/HomeButtom';
+import { executeQuery } from '../services/sqlService';
+import HomeButton from '../components/common/HomeButtom';
+import { buildInforTableInserts, SOURCE_SERVER_OPTIONS } from '../utils/inforTableSql';
+import '../styles/pages/_load-infor-table.scss';
+
+const ENVIRONMENTS = [
+	{ value: 'dev', label: 'Development' },
+	{ value: 'prod', label: 'Production' },
+	{ value: 'deploy', label: 'Deploy' },
+];
 
 function LoadInforTablePage() {
-  const [tableName, setTableName] = useState('');
-  const [generatedSQL, setGeneratedSQL] = useState('');
-  const [loading, setLoading] = useState(false);
+	const [baseTable, setBaseTable] = useState('');
+	const [companiesCsv, setCompaniesCsv] = useState('220,221,222,223');
+	const [environment, setEnvironment] = useState('dev');
+	const [sourceServer, setSourceServer] = useState(SOURCE_SERVER_OPTIONS[0].value);
+	const [sourceDatabase, setSourceDatabase] = useState(SOURCE_SERVER_OPTIONS[0].database);
+	const [sourceAlias, setSourceAlias] = useState(SOURCE_SERVER_OPTIONS[0].alias);
+	const [sourceSchema, setSourceSchema] = useState('dbo');
+	const [pkColumnsCsv, setPkColumnsCsv] = useState('');
+	const [owner, setOwner] = useState('Vilim Pagon');
+	const [loadCategoryCdc, setLoadCategoryCdc] = useState('standard_load');
+	const [loadCategorySnapshot, setLoadCategorySnapshot] = useState('irregular_dq');
+	const [loadCategoryRdl, setLoadCategoryRdl] = useState('standard_load');
+	const [taskIdCdc, setTaskIdCdc] = useState(7);
+	const [taskIdSnapshot, setTaskIdSnapshot] = useState(110);
 
-  const generateInserts = () => {
-    setLoading(true);
-    
-    const today = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const initialDate = new Date();
-    initialDate.setMonth(initialDate.getMonth() - 1); // 1 months ago
-    const initialDateStr = initialDate.toISOString().slice(0, 19).replace('T', ' ');
-    
-    const sql = `
--- Pipeline Inserts
-INSERT INTO rep_mda.mda_ocn_pipelines (
-    pipeline_name,
-    pipeline_short_name,
-    pipeline_description,
-    schedule_type,
-    pipeline_owner,
-    enabled,
-    is_running,
-    batch_type,
-    metadata_tool_name,
-    metadata_tool_job_pk,
-    multiple_loads,
-    prod_mail_to,
-    test_mail_to,
-    initial_date,
-    date_of_insert,
-    pipeline_type,
-    load_category,
-    pipeline_priority) 
-VALUES (
-    'MS_SQL_CDC_INFOR_DBO_${tableName.toUpperCase()}_TO_BRONZE_LANDING_ZONE',
-    'CDC_${tableName.toUpperCase()}_LNG',
-    'Load table ${tableName.toUpperCase()} using SQL Server CDC mechanism',
-    'D',
-    'Vilim Pagon',
-    1,
-    0,
-    'BT',
-    NULL,
-    NULL,
-    1,
-    NULL,
-    NULL,
-    '${initialDateStr}.000',
-    '${today}.000',
-    'METADATA_DRIVEN_INGESTION',
-    'standard_load',
-    100);
+	const [companyResults, setCompanyResults] = useState([]);
 
-INSERT INTO rep_mda.mda_ocn_pipelines (
-    pipeline_name,
-    pipeline_short_name,
-    pipeline_description,
-    schedule_type,
-    pipeline_owner,
-    enabled,
-    is_running,
-    batch_type,
-    metadata_tool_name,
-    metadata_tool_job_pk,
-    multiple_loads,
-    prod_mail_to,
-    test_mail_to,
-    initial_date,
-    date_of_insert,
-    pipeline_type,
-    load_category,
-    pipeline_priority) 
-VALUES (
-    'RDL_R_LN_DBO_${tableName.toUpperCase()}_DELTA',
-    'RDL_R_LN_DBO_${tableName.toUpperCase()}_DELTA',
-    'Load table R_LN_DBO_${tableName.toUpperCase()}_DELTA using Raw Delta Framework',
-    'D',
-    'Vilim Pagon',
-    1,
-    0,
-    'BT',
-    NULL,
-    NULL,
-    1,
-    NULL,
-    NULL,
-    '${initialDateStr}.000',
-    '${today}.000',
-    'LOAD_RAW_DELTA',
-    'standard_load',
-    100);
+	const handleSourceServerChange = (value) => {
+		setSourceServer(value);
+		const opt = SOURCE_SERVER_OPTIONS.find((o) => o.value === value);
+		if (opt) {
+			setSourceAlias(opt.alias);
+			setSourceDatabase(opt.database);
+		}
+	};
 
--- Pipeline Parameters
-INSERT INTO rep_mda.mda_ocn_pipeline_parameters (
-    pipeline_id,
-    parameter_name,
-    parameter_value,
-    parameter_value_last_used) 
-VALUES (
-    (SELECT pipeline_id FROM rep_mda.mda_ocn_pipelines WHERE pipeline_name LIKE '%RDL_R_LN_DBO_${tableName.toUpperCase()}_DELTA%'),
-    'TABLE_NAME',
-    'BRONZE#R_LN_DBO_${tableName.toUpperCase()}_DELTA',
-    NULL);
+	const handleGenerate = () => {
+		const results = buildInforTableInserts({
+			baseTable,
+			companiesCsv,
+			sourceServer,
+			sourceDatabase,
+			sourceAlias,
+			sourceSchema,
+			pkColumnsCsv,
+			owner,
+			loadCategoryCdc,
+			loadCategorySnapshot,
+			loadCategoryRdl,
+			taskIdCdc: Number(taskIdCdc) || 0,
+			taskIdSnapshot: Number(taskIdSnapshot) || 0,
+		});
 
--- Data Ingestion
-INSERT INTO rep_mda.mda_data_ingestion (
-    job_name,
-    source_object_settings,
-    source_connection_settings,
-    source_copy_settings,
-    sink_object_settings,
-    sink_connection_settings,
-    sink_copy_settings,
-    copy_activity_settings,
-    calling_entity_name,
-    triggering_entity_name,
-    data_loading_behavior_settings,
-    task_id,
-    task_name,
-    copy_enabled) 
-VALUES (
-    'MS_SQL_CDC_INFOR_DBO_${tableName.toUpperCase()}_TO_BRONZE_LANDING_ZONE',
-    '{"schema":"dbo","table":"${tableName.toLowerCase()}"}',
-    '{"SourceConnectionAlias":"infor","LinkedServiceName":"LS_GEN_SHIR_SQLServerWindowsAuth","MSSQLServerName":"RT-VS-PR-085\\\\INFORTESTLN","MSSQLDatabaseName":"infordb","DatastoreType":"RimacOnPremSQLServerTableCdc"}',
-    '{"PartitionOption":"None","PartitionNames":null}',
-    '{"fileName":"#schema#.#table#.snappy.parquet","folderPath":"01_#source#\\/01_#schema#\\/04_parquet\\/lze_#table#\\/#subfolder#\\/year=#year#\\/month=#month#\\/day=#day#","fileSystem":"01-bronze\\/01_landing"}',
-    NULL,
-    NULL,
-    '{"logFolderPath":"00-default\\/900_logs\\/#date_yyyyMMdd#\\/01_data_ingestion\\/#pipeline#\\/load_sql_cdc\\/#folder_path#"}',
-    'PPE_MdaIngestionTopLevel',
-    '["Sandbox","Manual","TGR_Scheduled3AM","<ANY>"]',
-    '{     "dataLoadingBehavior": "FullLoad",     "watermarkColumnName": null,     "watermarkColumnType": null,     "watermarkColumnStartValue": null }',
-    110,
-    'Default',
-    1);
+		setCompanyResults(results.map((r) => ({
+			...r,
+			queries: r.queries.map((q) => ({ ...q, text: q.sql, status: 'idle', message: '' })),
+		})));
+	};
 
--- RDL Tables
-INSERT INTO rep_mda.mda_rdl_tables (
-    zone_name,
-    schema_name,
-    table_name,
-    source_directory,
-    target_directory,
-    alias,
-    unique_key,
-    partition_format,
-    description,
-    is_active,
-    date_insert,
-    key_rdl_tbe) 
-VALUES (
-    'BRONZE',
-    '012_raw',
-    'r_ln_dbo_${tableName.toLowerCase()}_delta',
-    '/01_landing/01_infor/01_dbo/04_parquet/lze_${tableName.toLowerCase()}',
-    '/02_raw/01_infor/01_dbo/rze_${tableName.toLowerCase()}_delta',
-    'r_ln_dbo_${tableName.toLowerCase()}_delta',
-    'CHECK FOR PRIMARY KEY ON INFOR',  -- Manual check required
-    '{}/year={}/month={}/day={}',
-    NULL,
-    1,
-    '${today}.000',
-    'BRONZE#R_LN_DBO_${tableName.toUpperCase()}_DELTA');
+	const updateQueryText = (companyIdx, queryIdx, text) => {
+		setCompanyResults((prev) => {
+			const next = [...prev];
+			const queries = [...next[companyIdx].queries];
+			queries[queryIdx] = { ...queries[queryIdx], text };
+			next[companyIdx] = { ...next[companyIdx], queries };
+			return next;
+		});
+	};
 
--- Pipeline Dependencies
-INSERT INTO rep_mda.mda_ocn_pipeline_dependencies (
-    pipeline_id,
-    dependant_pipeline_id,
-    dependency_lag,
-    key_dep,
-    additional_checks) 
-VALUES (
-    (SELECT pipeline_id FROM rep_mda.mda_ocn_pipelines WHERE pipeline_name LIKE 'RDL_R_LN_DBO_${tableName.toUpperCase()}_DELTA'),
-    (SELECT pipeline_id FROM rep_mda.mda_ocn_pipelines WHERE pipeline_name LIKE 'MS_SQL_CDC_INFOR_DBO_${tableName.toUpperCase()}_TO_BRONZE_LANDING_ZONE'),
-    0,
-    'DEP_MS_SQL_CDC_INFOR_DBO_${tableName.toUpperCase()}_TO_BRONZE_LANDING_ZONE_RDL_R_LN_DBO_${tableName.toUpperCase()}_DELTA',
-    'CHECK_DEPENDENCY_ROWCOUNT');
-`;
+	const setQueryStatus = (companyIdx, queryIdx, status, message = '') => {
+		setCompanyResults((prev) => {
+			const next = [...prev];
+			const queries = [...next[companyIdx].queries];
+			queries[queryIdx] = { ...queries[queryIdx], status, message };
+			next[companyIdx] = { ...next[companyIdx], queries };
+			return next;
+		});
+	};
 
-    setGeneratedSQL(sql);
-    setLoading(false);
-  };
+	const executeOne = async (companyIdx, queryIdx) => {
+		const company = companyResults[companyIdx];
+		const query = company.queries[queryIdx];
+		setQueryStatus(companyIdx, queryIdx, 'running');
+		try {
+			const result = await executeQuery(environment, query.text, {
+				source: 'load-infor-table',
+				metadata: { company: company.company, fullTable: company.fullTable, queryId: query.id },
+			});
+			setQueryStatus(companyIdx, queryIdx, 'success', result.message || `Rows affected: ${result.rowsAffected ?? 0}`);
+		} catch (err) {
+			setQueryStatus(companyIdx, queryIdx, 'error', err.message);
+		}
+	};
 
-  return (
-    <div className="load-infor-page">
-      <HomeButton />
-      <h1>Load Infor Table Configuration</h1>
-      
-      <div className="input-section">
-        <div className="form-group">
-          <label>Infor Table Name:</label>
-          <input
-            type="text"
-            value={tableName}
-            onChange={(e) => setTableName(e.target.value)}
-            placeholder="e.g., TWHINH226222"
-          />
-        </div>
-        
-        <button 
-          onClick={generateInserts}
-          disabled={loading || !tableName}
-        >
-          {loading ? 'Generating...' : 'Generate SQL Inserts'}
-        </button>
-      </div>
+	const executeAll = async (companyIdx) => {
+		for (let i = 0; i < companyResults[companyIdx].queries.length; i++) {
+			// eslint-disable-next-line no-await-in-loop
+			await executeOne(companyIdx, i);
+		}
+	};
 
-      {generatedSQL && (
-        <div className="sql-section">
-          <h3>Generated SQL Inserts</h3>
-          <pre>{generatedSQL}</pre>
-          <button 
-            onClick={() => navigator.clipboard.writeText(generatedSQL)}
-            className="copy-btn"
-          >
-            Copy to Clipboard
-          </button>
-        </div>
-      )}
-    </div>
-  );
+	const copyOne = (text) => {
+		navigator.clipboard.writeText(text);
+	};
+
+	const canGenerate = baseTable.trim() && companiesCsv.trim();
+
+	return (
+		<div className="load-infor-table-page">
+			<HomeButton />
+			<h1>Load Infor Table Wizard</h1>
+			<p className="page-subtitle">
+				Onboard an Infor/ITAC table family (base table + company codes) into the metadata-driven ingestion framework:
+				CDC-landing, snapshot-bronze, and RDL-delta pipelines, their ingestion jobs, RDL table definition, and dependencies.
+			</p>
+
+			<div className="wizard-form">
+				<div className="form-row">
+					<div className="form-group">
+						<label>Base Infor Table Name</label>
+						<input
+							type="text"
+							value={baseTable}
+							onChange={(e) => setBaseTable(e.target.value)}
+							placeholder="e.g. TQMPTC300"
+						/>
+					</div>
+					<div className="form-group">
+						<label>Company Codes (comma-separated)</label>
+						<input
+							type="text"
+							value={companiesCsv}
+							onChange={(e) => setCompaniesCsv(e.target.value)}
+							placeholder="220,221,222,223"
+						/>
+					</div>
+				</div>
+
+				<div className="form-row">
+					<div className="form-group">
+						<label>Target Metadata Environment</label>
+						<select value={environment} onChange={(e) => setEnvironment(e.target.value)}>
+							{ENVIRONMENTS.map((env) => (
+								<option key={env.value} value={env.value}>{env.label}</option>
+							))}
+						</select>
+					</div>
+					<div className="form-group">
+						<label>Infor / ITAC Source Server</label>
+						<select value={sourceServer} onChange={(e) => handleSourceServerChange(e.target.value)}>
+							{SOURCE_SERVER_OPTIONS.map((opt) => (
+								<option key={opt.value} value={opt.value}>{opt.value}</option>
+							))}
+						</select>
+					</div>
+				</div>
+
+				<div className="form-row">
+					<div className="form-group">
+						<label>Source Database Name</label>
+						<input type="text" value={sourceDatabase} onChange={(e) => setSourceDatabase(e.target.value)} />
+					</div>
+					<div className="form-group">
+						<label>Source Connection Alias</label>
+						<input type="text" value={sourceAlias} onChange={(e) => setSourceAlias(e.target.value)} />
+					</div>
+					<div className="form-group">
+						<label>Source Schema</label>
+						<input type="text" value={sourceSchema} onChange={(e) => setSourceSchema(e.target.value)} />
+					</div>
+				</div>
+
+				<div className="form-row">
+					<div className="form-group form-group--wide">
+						<label>Primary Key Columns (comma-separated)</label>
+						<input
+							type="text"
+							value={pkColumnsCsv}
+							onChange={(e) => setPkColumnsCsv(e.target.value)}
+							placeholder="e.g. t_cbdt,t_inno,t_inst,t_srno"
+						/>
+					</div>
+					<div className="form-group">
+						<label>Pipeline Owner</label>
+						<input type="text" value={owner} onChange={(e) => setOwner(e.target.value)} />
+					</div>
+				</div>
+
+				<div className="form-row">
+					<div className="form-group">
+						<label>Load Category — CDC</label>
+						<input type="text" value={loadCategoryCdc} onChange={(e) => setLoadCategoryCdc(e.target.value)} />
+					</div>
+					<div className="form-group">
+						<label>Load Category — Snapshot</label>
+						<input type="text" value={loadCategorySnapshot} onChange={(e) => setLoadCategorySnapshot(e.target.value)} />
+					</div>
+					<div className="form-group">
+						<label>Load Category — RDL</label>
+						<input type="text" value={loadCategoryRdl} onChange={(e) => setLoadCategoryRdl(e.target.value)} />
+					</div>
+				</div>
+
+				<div className="form-row">
+					<div className="form-group">
+						<label>Task ID — CDC</label>
+						<input type="number" value={taskIdCdc} onChange={(e) => setTaskIdCdc(e.target.value)} />
+					</div>
+					<div className="form-group">
+						<label>Task ID — Snapshot</label>
+						<input type="number" value={taskIdSnapshot} onChange={(e) => setTaskIdSnapshot(e.target.value)} />
+					</div>
+				</div>
+
+				<button type="button" className="generate-btn" onClick={handleGenerate} disabled={!canGenerate}>
+					Generate SQL
+				</button>
+			</div>
+
+			{companyResults.map((companyResult, companyIdx) => (
+				<div key={companyResult.company} className="company-section">
+					<div className="company-section-header">
+						<h2>{companyResult.fullTable}</h2>
+						<button type="button" className="execute-all-btn" onClick={() => executeAll(companyIdx)}>
+							Execute All ({environment})
+						</button>
+					</div>
+
+					{companyResult.queries.map((query, queryIdx) => (
+						<div key={query.id} className="query-block">
+							<div className="query-block-header">
+								<span className="query-label">{query.label}</span>
+								{query.status === 'running' && <span className="query-status query-status--running">Running...</span>}
+								{query.status === 'success' && <span className="query-status query-status--success">{query.message || 'OK'}</span>}
+								{query.status === 'error' && <span className="query-status query-status--error">{query.message}</span>}
+							</div>
+							<textarea
+								className="query-textarea"
+								value={query.text}
+								onChange={(e) => updateQueryText(companyIdx, queryIdx, e.target.value)}
+								rows={Math.min(20, query.text.split('\n').length + 1)}
+							/>
+							<div className="query-block-actions">
+								<button
+									type="button"
+									onClick={() => executeOne(companyIdx, queryIdx)}
+									disabled={query.status === 'running'}
+								>
+									Execute ({environment})
+								</button>
+								<button type="button" className="copy-btn" onClick={() => copyOne(query.text)}>
+									Copy to Clipboard
+								</button>
+							</div>
+						</div>
+					))}
+				</div>
+			))}
+		</div>
+	);
 }
 
 export default LoadInforTablePage;
