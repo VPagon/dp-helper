@@ -48,10 +48,6 @@ function HomePage() {
         <div className="category-card">
           <h2>Metadata Operations</h2>
           <div className="tool-list">
-            <Link to="/query-metadata" className="tool-card">
-              <h3>Query Metadata</h3>
-              <p>Execute metadata database queries</p>
-            </Link>
             <Link to="/query-history" className="tool-card">
               <h3>Query History</h3>
               <p>Audit log of generated and executed SQL with revert</p>
