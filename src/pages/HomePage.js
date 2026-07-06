@@ -48,10 +48,6 @@ function HomePage() {
         <div className="category-card">
           <h2>Metadata Operations</h2>
           <div className="tool-list">
-            <Link to="/query-metadata" className="tool-card">
-              <h3>Query Metadata</h3>
-              <p>Execute metadata database queries</p>
-            </Link>
             <Link to="/query-history" className="tool-card">
               <h3>Query History</h3>
               <p>Audit log of generated and executed SQL with revert</p>
@@ -59,6 +55,10 @@ function HomePage() {
             <Link to="/database-crud" className="tool-card">
               <h3>Database CRUD</h3>
               <p>Manage metadata database tables</p>
+            </Link>
+            <Link to="/database-info" className="tool-card">
+              <h3>Database Info</h3>
+              <p>Browse tables and schemas for dev, prod, and deploy</p>
             </Link>
             <Link to="/mrm-dle-compare" className="tool-card">
               <h3>MRM vs DLE Compare</h3>

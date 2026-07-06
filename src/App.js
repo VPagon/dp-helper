@@ -5,7 +5,6 @@ import AppHeader from './components/layout/AppHeader';
 import HomePage from './pages/HomePage';
 import InsertDataPage from './pages/InsertDataPage';
 import RecreateTablePage from './pages/RecreateTablePage';
-import QueryMetadataPage from './pages/QueryMetadataPage';
 import ReplicateToBRPage from './pages/ReplicateToBRPage';
 import LoadInforTablePage from './pages/LoadInforTablePage';
 import PipelineBranchOutPage from './pages/PipelineBranchOutPage';
@@ -18,6 +17,7 @@ import AddDQRulesPage from './pages/AddDQRulesPage';
 import ExecutionLogDashboard from './pages/ExecutionLogDashboard';
 import AutoDeployMetadata from './pages/AutoDeployMetadata';
 import DatabaseCRUDPage from 'pages/DatabaseCRUDPage';
+import DatabaseInfoPage from 'pages/DatabaseInfoPage';
 import DataSyncPage from './pages/DataSyncPage';
 import MetadateriumPage from './pages/MetadateriumPage';
 import LocalDatabaseManager from './pages/LocalDatabaseManager';
@@ -36,7 +36,6 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/insert-data" element={<InsertDataPage />} />
           <Route path="/recreate-table" element={<RecreateTablePage />} />
-          <Route path="/query-metadata" element={<QueryMetadataPage />} />
           <Route path="/replicate-to-br" element={<ReplicateToBRPage />} />
           <Route path="/load-infor-table" element={<LoadInforTablePage />} />
           <Route path="/pipeline-branch-out" element={<PipelineBranchOutPage />} />
@@ -49,6 +48,7 @@ function App() {
           <Route path="/execution-logs" element={<ExecutionLogDashboard />} />
           <Route path="/auto-deploy" element={<AutoDeployMetadata />} />
           <Route path="/database-crud" element={<DatabaseCRUDPage />} />
+          <Route path="/database-info" element={<DatabaseInfoPage />} />
           <Route path="/database-crud-page" element={<Navigate to="/database-crud" replace />} />
           <Route path="/database-crud-page-v2" element={<Navigate to="/database-crud" replace />} />
           <Route path="/data-sync" element={<DataSyncPage />} />
