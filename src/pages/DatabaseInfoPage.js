@@ -182,8 +182,8 @@ export default function DatabaseInfoPage() {
 							{loadingColumns ? (
 								<div className="loading">Loading columns...</div>
 							) : (
-								<div className="columns-table-container">
-									<table className="columns-table">
+								<div className="db-info-columns-container">
+									<table className="db-info-columns-table">
 										<thead>
 											<tr>
 												<th>Column</th>
