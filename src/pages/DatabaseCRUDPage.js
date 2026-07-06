@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { executeQuery } from '../services/sqlService';
 import HomeButton from '../components/common/HomeButtom';
+import TableAutocomplete from '../components/common/TableAutocomplete';
 import {
     formatCrudDisplayValue,
     formatCrudSqlValue,
@@ -27,7 +28,6 @@ export default function DatabaseCRUDPage() {
     const [selectedTable, setSelectedTable] = useState('');
     const [tableColumns, setTableColumns] = useState([]);
     const [filters, setFilters] = useState({});
-    const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -37,7 +37,6 @@ export default function DatabaseCRUDPage() {
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [showInsertPopup, setShowInsertPopup] = useState(false);
     const [generatedSQL, setGeneratedSQL] = useState('');
-    const [tableSuggestions, setTableSuggestions] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, row: null });
     const [showInsertBasedOnPopup, setShowInsertBasedOnPopup] = useState(false);
@@ -176,25 +175,11 @@ export default function DatabaseCRUDPage() {
         }
     };
 
-    // Search for tables based on input
-    const searchTables = (term) => {
-        if (!term.trim()) {
-            setTableSuggestions([]);
-            return;
-        }
-
-        const filtered = tables.filter(table =>
-            table[1].toLowerCase().includes(term.toLowerCase())
-        );
-        setTableSuggestions(filtered);
-    };
-
-    // Handle table selection
     const handleTableSelect = (table) => {
         const fullTableName = table[1];
         setSelectedTable(fullTableName);
-        setSearchTerm(fullTableName);
-        setTableSuggestions([]);
+        setResults(null);
+        setSortConfig({ key: null, direction: null });
         fetchTableColumns(fullTableName);
     };
 
@@ -463,14 +448,13 @@ VALUES (${values.join(', ')})`;
     };
 
     useEffect(() => {
+        setSelectedTable('');
+        setTableColumns([]);
+        setFilters({});
+        setResults(null);
+        setSortConfig({ key: null, direction: null });
         fetchTables();
     }, [environment]);
-
-    useEffect(() => {
-        if (searchTerm) {
-            searchTables(searchTerm);
-        }
-    }, [searchTerm]);
 
     // Handle right-click on table row
     const handleRowRightClick = (e, row) => {
@@ -544,28 +528,15 @@ VALUES (${values.join(', ')})`;
                 </div>
 
                 <div className="table-selector">
-                    <label>Table:</label>
-                    <div className="search-container">
-                        <input
-                            type="text"
-                            placeholder="Search tables..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        {tableSuggestions.length > 0 && (
-                            <div className="suggestions-dropdown">
-                                {tableSuggestions.map((table, index) => (
-                                    <div
-                                        key={index}
-                                        className="suggestion-item"
-                                        onClick={() => handleTableSelect(table)}
-                                    >
-                                        {table[1]}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <label htmlFor="crud-table-picker">Table:</label>
+                    <TableAutocomplete
+                        inputId="crud-table-picker"
+                        tables={tables}
+                        value={selectedTable}
+                        onSelect={handleTableSelect}
+                        disabled={loading && tables.length === 0}
+                        placeholder="Type to search tables..."
+                    />
                 </div>
 
                 {selectedTable && (

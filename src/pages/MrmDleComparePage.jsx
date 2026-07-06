@@ -313,7 +313,8 @@ export default function MrmDleComparePage() {
                         onToggle={() => toggleSection('tables')}
                     >
                         <p className="mdc-match-key">
-                            Match key: <code>table_name</code> (case-insensitive)
+                            Match key: <code>zone_name</code> + <code>schema_name</code> +{' '}
+                            <code>table_name</code> (case-insensitive). Active MRM tables only.
                         </p>
                         <DiffTable rows={tableDiffRows} />
                     </CompareSection>
@@ -340,7 +341,8 @@ export default function MrmDleComparePage() {
                         onToggle={() => toggleSection('columns')}
                     >
                         <p className="mdc-match-key">
-                            Match key: <code>table_name</code> + <code>column_name</code>
+                            Match key: <code>zone_name</code> + <code>table_name</code> +{' '}
+                            <code>column_name</code>. Excludes zones ODS and SLR_STG.
                         </p>
                         <DiffTable rows={columnDiffRows} />
                     </CompareSection>

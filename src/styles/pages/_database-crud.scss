@@ -31,6 +31,94 @@
 
 .table-selector {
     margin-bottom: 20px;
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: var(--color-text);
+    }
+}
+
+.table-autocomplete {
+    position: relative;
+    max-width: 420px;
+
+    input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md, 4px);
+        font-size: 14px;
+        color: var(--color-text);
+        background: var(--color-surface);
+        transition: border-color 0.2s, box-shadow 0.2s;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-muted, rgba(21, 101, 176, 0.2));
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus, var(--color-primary));
+            outline-offset: 1px;
+        }
+
+        &:disabled {
+            background-color: var(--color-disabled-bg);
+            color: var(--color-text-muted);
+            cursor: not-allowed;
+        }
+    }
+
+    &__list {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 4px 0;
+        list-style: none;
+        max-height: 240px;
+        overflow-y: auto;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md, 4px);
+        box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+        z-index: 20;
+    }
+
+    &__option {
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--color-text);
+        border-bottom: 1px solid var(--color-border-subtle);
+        transition: background-color 0.15s;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover,
+        &--highlighted {
+            background-color: var(--color-surface-muted);
+        }
+
+        &--highlighted {
+            background-color: var(--color-primary-muted, var(--color-info-bg));
+            color: var(--color-info-text, var(--color-text));
+        }
+    }
+
+    &__empty {
+        padding: 12px;
+        font-size: 14px;
+        color: var(--color-text-muted);
+        font-style: italic;
+        text-align: center;
+    }
 }
 
 .filters-section {

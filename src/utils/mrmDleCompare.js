@@ -1,35 +1,34 @@
 import { rowToRecord } from './metadataDiffSql';
 
+export const TABLE_KEY_FIELDS = ['zone_name', 'schema_name', 'table_name'];
+
 export const TABLE_COMPARE_FIELDS = [
-    'zone_name',
-    'schema_name',
     'directory',
     'alias',
     'partition_format',
     'table_type',
-    'is_active',
-    'key_dle_tbe',
-    'table_format',
     'optimizing_schedule',
+    'table_format',
+    'key_dle_tbe',
 ];
 
 export const JOB_COMPARE_FIELDS = [
+    'job_type',
     'filter',
     'transformation_script',
     'load_type',
-    'job_type',
+    'check_source_deleted_records',
+    'gld_delete_non_existing_records',
 ];
 
-export const JOB_TABLE_REF_FIELDS = ['tgt_dle_tbe_id', 'src_dle_tbe_id'];
+export const JOB_TABLE_REF_FIELDS = ['src_dle_tbe_id', 'tgt_dle_tbe_id'];
 
-export const COLUMN_COMPARE_FIELDS = [
-    'mapping',
-    'flags',
-    'is_active',
-    'column_type',
-    'nullable',
-    'default_value',
-];
+export const COLUMN_COMPARE_FIELDS = ['mapping'];
+
+export const COLUMN_TABLE_REF_FIELD = 'dle_tbe_id';
+
+/** Zones excluded from column comparison (per MRM/DLE spec SQL). */
+export const EXCLUDED_COLUMN_ZONES = ['ODS', 'SLR_STG'];
 
 /** @returns {number|null} */
 export function parseMrmId(value) {
@@ -49,6 +48,17 @@ function normalizeKey(value) {
     return String(value ?? '').trim().toLowerCase();
 }
 
+/** @param {object|null|undefined} row @param {string[]} keyFields */
+export function buildEntityKey(row, keyFields) {
+    if (!row || !keyFields?.length) return '';
+    return keyFields.map((field) => normalizeKey(row[field])).join('|');
+}
+
+function buildEntityLabel(row, keyFields) {
+    if (!row || !keyFields?.length) return '';
+    return keyFields.map((field) => row[field] ?? '?').join(' / ');
+}
+
 function normalizeValue(value) {
     if (value === null || value === undefined) return '';
     if (typeof value === 'object') return JSON.stringify(value);
@@ -64,31 +74,47 @@ function valuesEqual(a, b) {
     return normA.toLowerCase() === normB.toLowerCase();
 }
 
+export function isExcludedColumnZone(zone) {
+    return EXCLUDED_COLUMN_ZONES.includes(String(zone ?? '').trim().toUpperCase());
+}
+
+function isActiveRow(row) {
+    return row?.is_active == 1 || row?.is_active === true;
+}
+
+function resolveTableRef(value, dleTableById, dleTableByName, refKeyFields = ['table_name']) {
+    if (value === null || value === undefined || value === '') return '';
+
+    const asString = String(value).trim();
+    const asNumber = Number(asString);
+    if (Number.isFinite(asNumber) && dleTableById.has(asNumber)) {
+        const tableRow = dleTableById.get(asNumber);
+        return buildEntityKey(tableRow, refKeyFields) || normalizeKey(tableRow.table_name);
+    }
+
+    const byName = dleTableByName.get(normalizeKey(asString));
+    if (byName) {
+        return buildEntityKey(byName, refKeyFields) || normalizeKey(byName.table_name);
+    }
+
+    return normalizeKey(asString);
+}
+
 function formatDisplayValue(value) {
     if (value === null || value === undefined || value === '') return '—';
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
 }
 
-function resolveTableRef(value, dleTableById, dleTableByName) {
-    if (value === null || value === undefined || value === '') return '';
-
-    const asString = String(value).trim();
-    const asNumber = Number(asString);
-    if (Number.isFinite(asNumber) && dleTableById.has(asNumber)) {
-        return normalizeKey(dleTableById.get(asNumber));
-    }
-
-    const byName = dleTableByName.get(normalizeKey(asString));
-    if (byName?.table_name) {
-        return normalizeKey(byName.table_name);
-    }
-
-    return normalizeKey(asString);
-}
-
 function compareFieldList(mrmRow, dleRow, fields, options = {}) {
-    const { resolveRefs = false, dleTableById, dleTableByName } = options;
+    const {
+        resolveRefs = false,
+        dleTableById,
+        dleTableByName,
+        refKeyFields = ['table_name'],
+        resolveMrmRef,
+        resolveDleRef,
+    } = options;
 
     return fields.map((field) => {
         const mrmRaw = mrmRow?.[field];
@@ -107,8 +133,12 @@ function compareFieldList(mrmRow, dleRow, fields, options = {}) {
         } else if (!dleHas) {
             status = 'missing_dle';
         } else if (resolveRefs) {
-            const mrmResolved = resolveTableRef(mrmRaw, dleTableById, dleTableByName);
-            const dleResolved = resolveTableRef(dleRaw, dleTableById, dleTableByName);
+            const mrmResolved =
+                resolveMrmRef?.(mrmRaw, mrmRow) ??
+                resolveTableRef(mrmRaw, dleTableById, dleTableByName, refKeyFields);
+            const dleResolved =
+                resolveDleRef?.(dleRaw, dleRow) ??
+                resolveTableRef(dleRaw, dleTableById, dleTableByName, refKeyFields);
             mrmValue = mrmResolved || formatDisplayValue(mrmRaw);
             dleValue = dleResolved || formatDisplayValue(dleRaw);
             if (mrmResolved !== dleResolved) status = 'diff';
@@ -129,7 +159,8 @@ function compareFieldList(mrmRow, dleRow, fields, options = {}) {
  * @param {object} params
  * @param {Array<object>} params.mrmRows
  * @param {Array<object>} params.dleRows
- * @param {string} params.keyField
+ * @param {string} [params.keyField]
+ * @param {string[]} [params.keyFields]
  * @param {string[]} params.compareFields
  * @param {object} [params.options]
  */
@@ -137,19 +168,21 @@ export function compareEntitySets({
     mrmRows,
     dleRows,
     keyField,
+    keyFields,
     compareFields,
     options = {},
 }) {
+    const entityKeyFields = keyFields ?? (keyField ? [keyField] : []);
     const mrmMap = new Map();
     const dleMap = new Map();
 
     (mrmRows || []).forEach((row) => {
-        const key = normalizeKey(row[keyField]);
+        const key = buildEntityKey(row, entityKeyFields);
         if (key) mrmMap.set(key, row);
     });
 
     (dleRows || []).forEach((row) => {
-        const key = normalizeKey(row[keyField]);
+        const key = buildEntityKey(row, entityKeyFields);
         if (key) dleMap.set(key, row);
     });
 
@@ -164,11 +197,13 @@ export function compareEntitySets({
         const mrmRow = mrmMap.get(key);
         const dleRow = dleMap.get(key);
 
+        const labelRow = mrmRow ?? dleRow;
+
         if (mrmRow && !dleRow) {
             onlyMrm += 1;
             entities.push({
                 key,
-                label: mrmRow[keyField] ?? key,
+                label: buildEntityLabel(labelRow, entityKeyFields) || key,
                 entityStatus: 'only_mrm',
                 fields: [],
                 mrmRow,
@@ -181,7 +216,7 @@ export function compareEntitySets({
             onlyDle += 1;
             entities.push({
                 key,
-                label: dleRow[keyField] ?? key,
+                label: buildEntityLabel(labelRow, entityKeyFields) || key,
                 entityStatus: 'only_dle',
                 fields: [],
                 mrmRow: null,
@@ -201,7 +236,7 @@ export function compareEntitySets({
 
         entities.push({
             key,
-            label: mrmRow[keyField] ?? dleRow[keyField] ?? key,
+            label: buildEntityLabel(labelRow, entityKeyFields) || key,
             entityStatus: hasDiff ? 'diff' : 'match',
             fields,
             mrmRow,
@@ -221,40 +256,138 @@ function buildDleTableLookups(dleTableRows) {
 
     (dleTableRows || []).forEach((row) => {
         const id = row.id;
-        if (id != null) dleTableById.set(Number(id), row.table_name);
-        if (row.table_name) dleTableByName.set(normalizeKey(row.table_name), row);
+        if (id != null) dleTableById.set(Number(id), row);
+        if (row.table_name) {
+            const nameKey = normalizeKey(row.table_name);
+            if (!dleTableByName.has(nameKey)) dleTableByName.set(nameKey, row);
+        }
     });
 
     return { dleTableById, dleTableByName };
 }
 
-function enrichDleColumnsWithTableName(dleColumnRows, dleTableById) {
-    return (dleColumnRows || []).map((row) => {
-        const tableId = row.dle_tbe_id;
-        const tableName =
-            tableId != null && dleTableById.has(Number(tableId))
-                ? dleTableById.get(Number(tableId))
-                : row.table_name;
-        return { ...row, table_name: tableName };
+function resolveMrmColumnTableContext(mrmColumn, mrmTableRows) {
+    const tableNameKey = normalizeKey(mrmColumn.dle_tbe_id);
+    if (!tableNameKey) {
+        return { zone_name: mrmColumn.zone_name ?? '', table_name: mrmColumn.table_name ?? '' };
+    }
+
+    const candidates = (mrmTableRows || []).filter((tableRow) => {
+        if (normalizeKey(tableRow.table_name) !== tableNameKey) return false;
+        if (isExcludedColumnZone(tableRow.zone_name)) return false;
+        if (!isActiveRow(tableRow)) return false;
+        if (
+            mrmColumn.zone_name &&
+            normalizeKey(mrmColumn.zone_name) !== normalizeKey(tableRow.zone_name)
+        ) {
+            return false;
+        }
+        return true;
     });
+
+    if (candidates.length === 1) {
+        return {
+            zone_name: candidates[0].zone_name,
+            table_name: candidates[0].table_name,
+        };
+    }
+
+    return {
+        zone_name: mrmColumn.zone_name ?? '',
+        table_name: mrmColumn.dle_tbe_id ?? mrmColumn.table_name ?? '',
+    };
 }
 
-export function compareColumns(mrmColumnRows, dleColumnRows, dleTableById) {
-    const enrichedDle = enrichDleColumnsWithTableName(dleColumnRows, dleTableById);
+function resolveDleColumnTableContext(dleColumn, dleTableById) {
+    const asNumber = Number(dleColumn.dle_tbe_id);
+    if (Number.isFinite(asNumber) && dleTableById.has(asNumber)) {
+        const tableRow = dleTableById.get(asNumber);
+        return {
+            zone_name: tableRow.zone_name,
+            table_name: tableRow.table_name,
+        };
+    }
+
+    return {
+        zone_name: dleColumn.zone_name ?? '',
+        table_name: dleColumn.table_name ?? '',
+    };
+}
+
+function buildMrmColumnTableKeySet(mrmTableRows) {
+    const keys = new Set();
+    (mrmTableRows || []).forEach((row) => {
+        if (!isActiveRow(row) || isExcludedColumnZone(row.zone_name)) return;
+        const key = buildEntityKey(row, ['zone_name', 'table_name']);
+        if (key) keys.add(key);
+    });
+    return keys;
+}
+
+function enrichMrmColumnsWithTableContext(mrmColumnRows, mrmTableRows) {
+    return (mrmColumnRows || [])
+        .map((row) => {
+            const tableContext = resolveMrmColumnTableContext(row, mrmTableRows);
+            return { ...row, ...tableContext };
+        })
+        .filter((row) => {
+            if (!normalizeKey(row.column_name)) return false;
+            if (isExcludedColumnZone(row.zone_name)) return false;
+            return isActiveRow(row);
+        });
+}
+
+function enrichDleColumnsWithTableContext(dleColumnRows, dleTableById, mrmTableKeySet) {
+    return (dleColumnRows || [])
+        .map((row) => {
+            const tableContext = resolveDleColumnTableContext(row, dleTableById);
+            return { ...row, ...tableContext };
+        })
+        .filter((row) => {
+            if (!normalizeKey(row.column_name)) return false;
+            if (isExcludedColumnZone(row.zone_name)) return false;
+            const tableKey = buildEntityKey(row, ['zone_name', 'table_name']);
+            return tableKey && mrmTableKeySet.has(tableKey);
+        });
+}
+
+const COLUMN_KEY_FIELDS = ['zone_name', 'table_name', 'column_name'];
+
+export function compareColumns(
+    mrmColumnRows,
+    dleColumnRows,
+    dleTableById,
+    mrmTableRows = [],
+    dleTableByName = new Map()
+) {
+    const mrmTableKeySet = buildMrmColumnTableKeySet(mrmTableRows);
+    const enrichedMrm = enrichMrmColumnsWithTableContext(mrmColumnRows, mrmTableRows);
+    const enrichedDle = enrichDleColumnsWithTableContext(
+        dleColumnRows,
+        dleTableById,
+        mrmTableKeySet
+    );
 
     const mrmMap = new Map();
     const dleMap = new Map();
 
-    (mrmColumnRows || []).forEach((row) => {
-        const tableName = row.dle_tbe_id ?? row.table_name;
-        const key = `${normalizeKey(tableName)}|${normalizeKey(row.column_name)}`;
-        if (key !== '|') mrmMap.set(key, { ...row, table_name: tableName });
+    enrichedMrm.forEach((row) => {
+        const key = buildEntityKey(row, COLUMN_KEY_FIELDS);
+        if (key) mrmMap.set(key, row);
     });
 
     enrichedDle.forEach((row) => {
-        const key = `${normalizeKey(row.table_name)}|${normalizeKey(row.column_name)}`;
-        if (key !== '|') dleMap.set(key, row);
+        const key = buildEntityKey(row, COLUMN_KEY_FIELDS);
+        if (key) dleMap.set(key, row);
     });
+
+    const refOptions = {
+        resolveRefs: true,
+        refKeyFields: ['table_name'],
+        resolveMrmRef: (value, row) => normalizeKey(value ?? row?.table_name),
+        resolveDleRef: (value) =>
+            resolveTableRef(value, dleTableById, dleTableByName, ['table_name']),
+    };
 
     const allKeys = new Set([...mrmMap.keys(), ...dleMap.keys()]);
     const entities = [];
@@ -266,8 +399,10 @@ export function compareColumns(mrmColumnRows, dleColumnRows, dleTableById) {
     [...allKeys].sort().forEach((key) => {
         const mrmRow = mrmMap.get(key);
         const dleRow = dleMap.get(key);
-        const [tablePart, columnPart] = key.split('|');
-        const label = `${tablePart || '?'} · ${columnPart || '?'}`;
+        const [zonePart, tablePart, columnPart] = key.split('|');
+        const tableLabel =
+            zonePart && tablePart ? `${zonePart} / ${tablePart}` : tablePart || zonePart || '?';
+        const label = `${tableLabel} · ${columnPart || '?'}`;
 
         if (mrmRow && !dleRow) {
             onlyMrm += 1;
@@ -295,7 +430,14 @@ export function compareColumns(mrmColumnRows, dleColumnRows, dleTableById) {
             return;
         }
 
-        const fields = compareFieldList(mrmRow, dleRow, COLUMN_COMPARE_FIELDS);
+        const mrmRefRow = {
+            ...mrmRow,
+            dle_tbe_id: mrmRow.dle_tbe_id ?? mrmRow.table_name,
+        };
+        const fields = [
+            ...compareFieldList(mrmRow, dleRow, COLUMN_COMPARE_FIELDS),
+            ...compareFieldList(mrmRefRow, dleRow, [COLUMN_TABLE_REF_FIELD], refOptions),
+        ];
         const hasDiff = fields.some((f) => f.status !== 'match');
 
         if (hasDiff) differ += 1;
@@ -317,7 +459,7 @@ export function compareColumns(mrmColumnRows, dleColumnRows, dleTableById) {
     };
 }
 
-function compareJobs(mrmJobRows, dleJobRows, dleTableById, dleTableByName) {
+export function compareJobs(mrmJobRows, dleJobRows, dleTableById, dleTableByName) {
     const base = compareEntitySets({
         mrmRows: mrmJobRows,
         dleRows: dleJobRows,
@@ -329,6 +471,7 @@ function compareJobs(mrmJobRows, dleJobRows, dleTableById, dleTableByName) {
         resolveRefs: true,
         dleTableById,
         dleTableByName,
+        refKeyFields: ['table_name'],
     };
 
     let matched = 0;
@@ -425,8 +568,13 @@ export function buildMrmTablesSql(mrmId) {
 
 export function buildDleTablesSql(mrmId) {
     return `SELECT * FROM rep_mda.mda_dle_tables
-WHERE table_name IN (
-  SELECT table_name FROM rep_mda.mda_mrm_tables WHERE mrm_id = ${mrmId}
+WHERE EXISTS (
+  SELECT 1 FROM rep_mda.mda_mrm_tables m
+  WHERE m.mrm_id = ${mrmId}
+    AND m.is_active = 1
+    AND m.zone_name = mda_dle_tables.zone_name
+    AND m.schema_name = mda_dle_tables.schema_name
+    AND m.table_name = mda_dle_tables.table_name
 )`;
 }
 
@@ -448,8 +596,13 @@ export function buildMrmColumnsSql(mrmId) {
 export function buildDleColumnsSql(mrmId) {
     return `SELECT * FROM rep_mda.mda_dle_columns
 WHERE dle_tbe_id IN (
-  SELECT id FROM rep_mda.mda_dle_tables
-  WHERE table_name IN (SELECT table_name FROM rep_mda.mda_mrm_tables WHERE mrm_id = ${mrmId})
+  SELECT d.id FROM rep_mda.mda_dle_tables d
+  INNER JOIN rep_mda.mda_mrm_tables m
+    ON m.table_name = d.table_name
+   AND m.zone_name = d.zone_name
+  WHERE m.mrm_id = ${mrmId}
+    AND m.is_active = 1
+    AND m.zone_name NOT IN ('ODS', 'SLR_STG')
 )`;
 }
 
@@ -492,7 +645,7 @@ export async function fetchMrmDleCompareData(environment, mrmId, executeQuery) {
     ]);
 
     const mrmLogs = logsResult.records;
-    const mrmTables = mrmTablesResult.records;
+    const mrmTables = mrmTablesResult.records.filter(isActiveRow);
     const dleTables = dleTablesResult.records;
     const mrmJobs = mrmJobsResult.records;
     const dleJobs = dleJobsResult.records;
@@ -504,12 +657,12 @@ export async function fetchMrmDleCompareData(environment, mrmId, executeQuery) {
     const tables = compareEntitySets({
         mrmRows: mrmTables,
         dleRows: dleTables,
-        keyField: 'table_name',
+        keyFields: TABLE_KEY_FIELDS,
         compareFields: TABLE_COMPARE_FIELDS,
     });
 
     const jobs = compareJobs(mrmJobs, dleJobs, dleTableById, dleTableByName);
-    const columns = compareColumns(mrmColumns, dleColumns, dleTableById);
+    const columns = compareColumns(mrmColumns, dleColumns, dleTableById, mrmTables, dleTableByName);
     const executionStatus = parseMrmExecutionStatus(executionStatusResult.records);
 
     return {
