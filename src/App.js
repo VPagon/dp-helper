@@ -18,6 +18,7 @@ import AddDQRulesPage from './pages/AddDQRulesPage';
 import ExecutionLogDashboard from './pages/ExecutionLogDashboard';
 import AutoDeployMetadata from './pages/AutoDeployMetadata';
 import DatabaseCRUDPage from 'pages/DatabaseCRUDPage';
+import DatabaseInfoPage from 'pages/DatabaseInfoPage';
 import DataSyncPage from './pages/DataSyncPage';
 import MetadateriumPage from './pages/MetadateriumPage';
 import LocalDatabaseManager from './pages/LocalDatabaseManager';
@@ -49,6 +50,7 @@ function App() {
           <Route path="/execution-logs" element={<ExecutionLogDashboard />} />
           <Route path="/auto-deploy" element={<AutoDeployMetadata />} />
           <Route path="/database-crud" element={<DatabaseCRUDPage />} />
+          <Route path="/database-info" element={<DatabaseInfoPage />} />
           <Route path="/database-crud-page" element={<Navigate to="/database-crud" replace />} />
           <Route path="/database-crud-page-v2" element={<Navigate to="/database-crud" replace />} />
           <Route path="/data-sync" element={<DataSyncPage />} />

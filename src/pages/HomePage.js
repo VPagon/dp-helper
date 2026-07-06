@@ -60,6 +60,10 @@ function HomePage() {
               <h3>Database CRUD</h3>
               <p>Manage metadata database tables</p>
             </Link>
+            <Link to="/database-info" className="tool-card">
+              <h3>Database Info</h3>
+              <p>Browse tables and schemas for dev, prod, and deploy</p>
+            </Link>
             <Link to="/mrm-dle-compare" className="tool-card">
               <h3>MRM vs DLE Compare</h3>
               <p>Compare MRM repository definitions with live DLE metadata</p>
