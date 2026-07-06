@@ -22,7 +22,7 @@ There is no data entry or SQL execution on this page.
 |---------|--------------|
 | Monitoring | Metadata Comparison, Offloading Monitor, Execution Log Dashboard |
 | Help Services | Insert Data, Recreate Table, Add DQ Rules |
-| Metadata Operations | Query Metadata, Query History, Database CRUD, MRM vs DLE Compare |
+| Metadata Operations | Query Metadata, Query History, Database CRUD, Database Info, MRM vs DLE Compare |
 | Pipeline Tools | Pipeline Analysis, Pipeline Orchestration, Pipeline Visualization |
 | System Integration | Infor Delta Table Loader, Data Replication, Load Jira Asset, Auto Deploy Metadata |
 | Data migration | SQLDB-KUP-APP DEV-PROD MIGRATION, Metadaterium |
